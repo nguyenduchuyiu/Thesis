@@ -3,48 +3,44 @@ Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
 The style file: plainnat.bst
 Database file #1: sample.bib
-Warning--I didn't find a database entry for "ProD"
-Warning--I didn't find a database entry for "seedProver"
-Warning--I didn't find a database entry for "apollo"
-You've used 11 entries,
+You've used 17 entries,
             2773 wiz_defined-function locations,
-            659 strings with 7548 characters,
-and the built_in function-call counts, 6316 in all, are:
-= -- 502
-> -- 561
-< -- 5
-+ -- 188
-- -- 176
-* -- 543
-:= -- 986
-add.period$ -- 32
-call.type$ -- 11
-change.case$ -- 91
-chr.to.int$ -- 10
-cite$ -- 22
-duplicate$ -- 223
-empty$ -- 416
-format.name$ -- 191
-if$ -- 1303
-int.to.chr$ -- 2
+            687 strings with 9380 characters,
+and the built_in function-call counts, 11478 in all, are:
+= -- 874
+> -- 1191
+< -- 7
++ -- 399
+- -- 380
+* -- 1063
+:= -- 1826
+add.period$ -- 47
+call.type$ -- 17
+change.case$ -- 177
+chr.to.int$ -- 15
+cite$ -- 34
+duplicate$ -- 337
+empty$ -- 636
+format.name$ -- 401
+if$ -- 2320
+int.to.chr$ -- 3
 int.to.str$ -- 1
-missing$ -- 4
-newline$ -- 60
-num.names$ -- 46
-pop$ -- 217
+missing$ -- 5
+newline$ -- 86
+num.names$ -- 70
+pop$ -- 409
 preamble$ -- 1
-purify$ -- 80
+purify$ -- 160
 quote$ -- 0
-skip$ -- 223
+skip$ -- 377
 stack$ -- 0
-substring$ -- 86
-swap$ -- 33
-text.length$ -- 2
+substring$ -- 130
+swap$ -- 53
+text.length$ -- 4
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 121
+type$ -- 187
 warning$ -- 0
-while$ -- 40
+while$ -- 61
 width$ -- 0
-write$ -- 140
-(There were 3 warnings)
+write$ -- 207

@@ -10,7 +10,7 @@
 \usepackage{newtxtext, newtxmath}
 \usepackage{microtype}
 \usepackage{dsfont}
-\usepackage[numbers,sort&compress]{natbib}
+\usepackage[authoryear,round]{natbib}
 \usepackage{hyperref}
 \geometry{a4paper, margin=1in}
 \hypersetup{
@@ -74,7 +74,7 @@ We separates proof search into two complementary modes: directly solving the cur
 
 This separation turns proof search into an AND/OR graph. OR nodes represent proof states, while action nodes represent candidate proof steps. Each action forms an AND node with two types: a local proof action usually attempts to close the current goal directly and a skeleton action may create several child subgoals. A skeleton succeeds only when all of its child subgoals are solved.
 
-To make failed generations useful for later learning, we introduce an AST-guided Sorrifier that extends placeholder-based recovery approaches such as APOLLO \cite{apollo}.. The module localizes proof body failures and replaces the smallest recoverable failing region with \texttt{sorry}, producing a compilable partial script with placeholders. This patched script is not treated as a proof. It is used only to measure syntactic and structural validity.
+To make failed generations useful for later learning, we introduce an AST-guided Sorrifier that extends placeholder-based recovery approaches such as APOLLO \cite{apollo}. The module localizes proof body failures and replaces the smallest recoverable failing region with \texttt{sorry}, producing a compilable partial script with placeholders. This patched script is not treated as a proof. It is used only to measure syntactic and structural validity.
 
 The resulting system records how generated proofs evolve during search: which proof states are explored, which decompositions create useful subgoals, which fragments remain valid after recovery, and which intermediate claims contribute to the final proof.
 The model proposes; Lean verifies; the search graph records alternatives and dependencies; the
@@ -100,7 +100,7 @@ This thesis makes the following contributions:
 
 Section \ref{sec:background} summarizes the Lean and LLM theorem-proving background needed for the proposed method. Section \ref{sec:literature} reviews prior theorem-proving systems and benchmarks. Section \ref{sec:problem-formulation} defines the proof state, action space, AND/OR objective, and main reward challenges. Section \ref{sec:framework} presents the end-to-end system pipeline. Section \ref{sec:Sorrifier} describes AST-guided recovery. Section \ref{sec:reward} defines dense reward and credit assignment. Section \ref{sec:experiments} reserves the experimental plan. Section \ref{sec:conclusion} concludes with limitations and next steps.
 
-\section{Background and Related Work}
+\section{Background}
 \label{sec:background}
 
 \subsection{Lean 4 and Formal Proof Checking}
@@ -150,36 +150,14 @@ claim explicitly, and the search system later solves the exposed subgoal.
 
 Search-guided theorem proving treats Lean as an environment. A state is the current proof state, an action is a generated proof step, and the transition is Lean execution. Common search strategies include beam search, best-first search, and Monte Carlo tree search. These methods differ in how they prioritize frontier nodes, but they share the same core difficulty: the branching factor is large and useful reward may appear only after many decisions.
 
-This thesis uses an AND/OR view of proof search. OR structure captures alternative tactics or skeletons. AND structure captures generated subgoals that must all be solved. This is a better fit for proof decomposition than a purely linear trajectory, because one skeleton action can create several dependent child proof states.
+Proof decomposition naturally introduces an AND/OR search structure. OR structure represents alternative proof steps that can be applied to the current proof state. AND structure appears when a decomposition generates multiple subgoals that must all be solved for the proof to succeed. Compared with a purely linear proof trajectory, an AND/OR representation is better suited for reasoning about intermediate lemmas, subgoal dependencies, and hierarchical proof structure.
 
-\subsection{Reinforcement Learning and Sparse Rewards}
+\subsection{Reinforcement Learning and Sparse Feedback}
+Reinforcement learning is a promising direction for automated theorem proving because proof generation naturally involves sequential decision making. A system repeatedly chooses proof steps, observes the resulting proof states after Lean execution, and eventually succeeds or fails depending on whether the theorem is fully verified.
 
-Lean proof generation can be formulated as reinforcement learning over deterministic environment transitions:
-\[
-\mathcal{E} = (\mathcal{S}, \mathcal{A}, \mathcal{T}, \mathcal{R}),
-\]
-where \(\mathcal{S}\) is the proof-state space, \(\mathcal{A}\) is the action space, \(\mathcal{T}\) is Lean execution, and \(\mathcal{R}\) is the reward function.
+However, applying reinforcement learning to Lean proof generation remains difficult. Lean provides extremely sparse feedback: a proof is either accepted or rejected, and useful signal may appear only after many proof steps. Long proofs further increase the difficulty because local actions may influence the final outcome only much later in the search process.
 
-The main practical challenge is reward design. A binary reward gives
-\[
-r =
-\begin{cases}
-1, & \text{if the proof verifies without placeholders}, \\
-0, & \text{otherwise}.
-\end{cases}
-\]
-For long proofs, this signal is too sparse to identify which local actions were useful. Dense rewards can help, but they must be designed carefully so that the model does not learn to maximize syntactic validity without making logical progress.
-
-\subsection{Research Gap}
-
-Existing approaches often conflate three different problems: generating syntactically valid Lean, choosing useful local tactics, and discovering proof structure. This thesis addresses the gap by making these roles explicit. Syntax recovery is handled by the Sorrifier, local goal closure is handled by terminal tactics, and long-horizon decomposition is handled by skeleton actions evaluated through dependency-aware reward.
-
-The separation is also useful for evaluation. If a system fails to solve a theorem, the failure may come
-from an invalid local tactic, a poor decomposition, an insufficient search limit, or a missing library
-lemma. A monolithic success rate hides these differences. GammaZero records action type, repair status,
-child proof states, queue behavior, dependency classes, and final stitching status so that failures can be
-analyzed at the right level. This is why the thesis treats proof search and reward-data generation as a
-single framework.
+Dense reward signals can help guide search and future policy optimization, but they must be designed carefully. A reward based only on syntactic validity may encourage compilable but logically irrelevant proof fragments. A useful reward mechanism should therefore reflect not only local validity, but also whether generated proof fragments contribute to the final proof structure.
 
 \section{Literature Review}
 \label{sec:literature}
@@ -302,225 +280,254 @@ skeleton commitment statistics, dependency classes, and queue pruning counts. Th
 needed because the framework is designed to generate training data for future optimization, not merely to
 report a single pass rate.
 
+\subsection{Autoformalization}
+
+Autoformalization studies the translation of informal mathematical statements, proofs, or problem
+descriptions into a formal language that can be checked by a proof assistant. This problem is adjacent to
+formal theorem proving but not identical to it. A prover starts from a formal statement and attempts to
+construct a proof term or tactic script. An autoformalizer may instead start from natural language and
+must decide which definitions, coercions, quantifier order, side conditions, and library notions capture the
+intended mathematics. A formally verified proof of the wrong statement is still a verification artifact, but
+it does not solve the original informal problem.
+
+Large language models have made autoformalization more plausible because they can map between
+informal mathematical prose and formal syntax when given sufficient examples. Wu et al. study
+autoformalization with large language models and show that translation quality can improve when
+informal and formal corpora are used together \citep{wu2022autoformalization}. The central difficulty is
+semantic alignment: the model must preserve the meaning of the informal statement while selecting a
+formal encoding accepted by the target proof assistant. This is especially delicate in mathematics because
+many informal statements suppress assumptions that a formal theorem must make explicit.
+
+ProofNet highlights this distinction by pairing undergraduate-level mathematical problems with formal
+counterparts and by evaluating both autoformalization and proving \citep{azerbayev2023proofnet}. Such
+datasets are valuable because they expose two separate failure modes. A system may fail before proof
+search begins because the formal statement is missing a hypothesis or uses an unsuitable definition. It
+may also receive a correct formal statement but fail to prove it. The miniF2F-Lean revisited analysis
+similarly motivates caution when interpreting formal benchmark results: the exact formal statement and
+library context can alter the problem being measured \citep{ospanov2025minif2fLeanRevisited}.
+
+GammaZero does not attempt autoformalization in this thesis. The input is assumed to be an existing
+Lean theorem statement, and the system's responsibility begins after that statement is fixed. This boundary
+is important for evaluation. A failed GammaZero run should be interpreted as a failure to find a verified
+proof within the current search limits, not as evidence that the informal theorem is false or that the
+formalization is faithful. Conversely, a successful run certifies the formal theorem that Lean checked; it
+does not by itself validate an upstream natural-language translation. Future systems could connect an
+autoformalizer to GammaZero, but the correctness boundary would still need to distinguish translation
+validity from proof validity.
+
+\subsection{Reinforcement Learning for Theorem Proving}
+
+Reinforcement learning is attractive for theorem proving because proof construction is naturally
+sequential. A prover chooses an action, observes a new state from the proof assistant, and eventually
+receives a success or failure signal. Earlier work on reinforcement learning of theorem proving explored
+how learned guidance can improve symbolic proof search and how proof attempts can produce training
+signal for subsequent attempts \citep{kaliszyk2018reinforcement}. HOList made this direction more
+systematic by providing an environment for machine learning over Higher Order Logic theorem proving,
+with explicit states, actions, and goals suitable for learned policies \citep{bansal2019holist}.
+
+The main obstacle is reward sparsity. A theorem prover may need many local decisions before the final
+checker accepts the proof. Most intermediate states do not come with a natural scalar value, and failed
+branches may still contain useful mathematical structure. This makes a naive terminal reward difficult to
+use: the system learns only that a complete trajectory failed, without knowing whether the early plan was
+bad, the final tactic was malformed, or a promising subgoal was simply not finished in time. Proof-search
+systems therefore often combine policy guidance with search, replay, or additional value estimates rather
+than relying on single sampled trajectories.
+
+Recent neural provers continue this pattern. GPT-f uses a generative model and proof search rather than
+trusting one direct completion \citep{polu2020gptf}. DeepSeek-Prover-V1.5 explicitly combines proof
+assistant feedback with reinforcement learning and Monte Carlo tree search, showing the importance of
+using checker feedback as a learning signal rather than treating the language model as a standalone
+reasoner \citep{xin2024deepseekproverv15}. These systems support a broader lesson: reinforcement
+learning for formal proving is most credible when it is grounded in verified transitions from a proof
+assistant.
+
+This thesis does not train a reinforcement learning policy. Instead, GammaZero is designed to generate RL-compatible scored
+trajectories. Each verified, repaired, failed, or partially useful action can be recorded with environment
+feedback, dependency information, graph position, and final proof outcome. The goal is to make future
+optimization more data-rich: a policy should be able to learn not only which actions solved a root theorem,
+but also which skeletons introduced useful child proof states, which local tactics survived Lean checking,
+and which declarations were unused in the final proof.
+
 \subsection{Positioning of GammaZero}
 
-The systems reviewed above motivate the exact position of GammaZero. GPT-f and related language
-model approaches show that generative models can produce useful proof steps when wrapped in search.
-HyperTree-style methods show that proof search benefits from representing conjunctive subgoals
-explicitly. Retrieval-augmented systems such as LeanDojo show that interaction with Lean and access to
-library context are crucial. Sketch-guided systems show that high-level decomposition can make formal
-proof search more tractable. GammaZero combines these lessons in a narrower but concrete setting: it
-uses LLM samples as proposals, Lean as the verifier, skeletons as executable decompositions, and
-dependency analysis as a reward signal for whether the decomposition was actually useful.
+Existing work suggests several complementary directions for LLM-assisted theorem proving. Search-based
+systems treat Lean as a verification environment and explore many candidate proof steps. Sketch-based
+systems introduce higher-level proof structure through intermediate lemmas or informal plans.
+Retrieval-based systems improve local reasoning by exposing relevant library context. Autoformalization
+systems address the upstream problem of producing faithful formal statements from informal mathematics.
+Reinforcement learning systems study how proof-assistant feedback can improve future proposal policies.
 
-The framework is intentionally modular. The model that proposes tactics and skeletons could be
-replaced by a stronger LLM. The priority score could be replaced by a learned value model. Retrieval
-could be added to the prompt. External automation could be called as a terminal tactic. These extensions
-would not change the central interface: actions are checked by Lean, skeletons expose named subgoals,
-subgoals are solved inside scaffolds, and final success is verified without placeholders. This modularity is
-what makes the framework suitable as a thesis contribution even before full policy training is performed.
+GammaZero is positioned between flat tactic search and high-level proof sketching. Instead of generating one tactic at a time, the framework separates local proof generation from explicit proof decomposition. Local proof actions attempt to close the current proof state directly, while skeleton actions introduce intermediate structure through executable Lean scaffolds with named subgoals.
 
-The closest conceptual comparison is to systems that generate proof sketches. However, GammaZero's
-skeletons are more constrained than informal sketches and more structured than ordinary tactic
-sequences. They occupy a middle layer: formal enough for Lean to extract child proof states, but abstract
-enough to express intermediate proof structure. This middle layer is the main object studied in the rest
-of the thesis.
+This separation changes the role of search. The search graph does not expand after every tactic step. New proof states are introduced mainly through decomposition decisions, which makes the growth of the search space depend more on skeleton structure than on low-level tactic exploration. At the same time, every decomposition remains grounded in Lean through elaborated scaffolds and verified child proof states.
 
-\subsection{Autoformalization and Future Policy Optimization}
+GammaZero also differs from purely success-driven proof search. Failed or partially valid generations are not discarded immediately. Instead, the framework extracts repair information, dependency structure, and local verification signals to produce structured search trajectories for future reinforcement learning and policy optimization. In that sense, GammaZero occupies a deliberately narrow but useful position: it assumes the theorem is already formalized, keeps Lean as the correctness authority, uses best-first search to spend effort on promising open states, and records dense feedback that can support future policy learning.
 
-Autoformalization asks models to translate informal mathematical statements or proofs into formal
-language. Work on autoformalization with large language models shows that informal-to-formal
-translation is possible but difficult, especially when hidden assumptions, library conventions, and proof
-assistant idioms matter \citep{wu2022autoformalization}. Although GammaZero does not directly solve
-autoformalization, it addresses a neighboring problem: once a formal theorem statement is available, how
-can model-generated proof fragments be converted into reliable search data?
-
-This framing matters for reinforcement learning. A naive reinforcement-learning setup gives reward only
-when the final theorem verifies. For long proofs, that signal is too sparse. GammaZero instead records
-structured feedback at several levels: whether a tactic closes a local state, how much of a failed action
-survives repair, whether a skeleton creates named subgoals, whether those child states are solved, and
-whether solved declarations are actually used in the parent proof. These signals are intended to be
-compatible with future policy optimization, but this thesis does not claim to train a new policy model.
-
-The literature therefore motivates three design choices in GammaZero. First, Lean remains the verifier of
-all accepted proofs. Second, search must be structured enough to represent decomposition and dependency.
-Third, partial failures should produce useful data without weakening the final correctness boundary. The
-result is a framework that sits between raw LLM generation and full policy optimization: it converts
-samples into verified graph structure and scored trajectories.
 
 \section{Problem Formulation}
 \label{sec:problem-formulation}
 
-\subsection{Lean Proof State}
+\subsection{Proof States and Proof Scaffolds}
 
-Given a theorem statement \(T\), the objective is to construct a Lean proof script \(\pi\) such that Lean verifies \(T\) without any placeholder. At each step, the system observes a proof state
+Given a theorem statement \(T\), the objective is to construct Lean code that proves \(T\) without using \texttt{sorry}, \texttt{admit}, or any temporary placeholder. Lean verification is the final correctness criterion: a proof is accepted only when the complete theorem is checked successfully.
+
+GammaZero represents proof search as a graph of open proof states. A proof state is not only a goal formula. It also includes the proof context in which that goal appears. This distinction is important because the same goal may occur in different parts of a proof and may have access to different local facts.
+
+To preserve this context, GammaZero uses a proof scaffold. A scaffold is a partial Lean proof that contains the current hole to be solved, the surrounding proof code, and the structure that connects this hole back to the parent goal. The model is therefore not asked to solve a child goal as an independent theorem. Instead, it solves the goal inside the proof structure where the goal was created.
+
+Each open state is assigned one target hole. The task of the state is to replace that hole with valid Lean code. Other unfinished holes in the same scaffold are treated as sibling holes. They are not solved by the current state; they belong to other states in the graph. This gives each state a clear local task while still keeping the full parent proof structure visible.
+
+This design is especially important for skeleton actions. A skeleton action may introduce several child subgoals, but it also provides a partial proof structure showing how those subgoals are intended to support the parent goal. Solving the children separately is not enough by itself. Their proofs must later fit back into the scaffold so that the whole parent proof can be checked by Lean.
+
+At a high level, a scaffolded proof state can be viewed as
 \[
-s = (\Gamma, g),
+s = (C, i),
 \]
-where \(\Gamma\) is the local context of variables and hypotheses, and \(g\) is the current goal. Lean execution is deterministic: a candidate action either closes the goal, produces successor goals, or fails with a parser, elaboration, or type-checking error.
+where \(C\) is the proof scaffold and \(i\) identifies the target hole inside that scaffold. Lean provides the local context and the target goal at this hole, and these are shown to the model to make the task explicit. However, the state is not represented only by the pair of local context and goal. The surrounding scaffold is part of the state because it records where the hole occurs and how the completed proof will connect back to the parent proof.
+This distinction matters because two holes may have the same visible goal but occur in different scaffolds. A proof that is valid for one hole is not necessarily valid for the other.
+This gives each state a simple contract: it may replace the target hole with Lean code, but it must leave the surrounding scaffold unchanged.
 
-For root theorem states, this pair is sufficient. For subgoals produced by a skeleton, the implementation uses an extended \texttt{ProofState} key:
+After the required child states are solved, GammaZero inserts their proof bodies back into the parent scaffold and asks Lean to verify the resulting proof again. Temporary placeholders used during search do not count as proof. They are only a way to check one part of a larger proof while the other parts are still being solved. Final success always requires complete Lean verification without placeholders.
+
+\subsection{Action Space: Local Proof Actions and Skeleton Actions}
+
+GammaZero separates two ways of continuing proof search. The first way is to solve the current proof state directly. The second way is to introduce proof structure that may create smaller subgoals. This gives two action types:
 \[
-s = (\Gamma, g, h_{\mathrm{scaffold}}, \kappa_{\mathrm{target}}, i_{\mathrm{target}}),
-\]
-where \(h_{\mathrm{scaffold}}\) identifies the parent theorem scaffold, \(\kappa_{\mathrm{target}}\) records the kind of target placeholder, and \(i_{\mathrm{target}}\) identifies the target \texttt{sorry} within that scaffold. This prevents two textually similar goals from being merged when they occur at different placeholder positions in different proof scaffolds.
-
-The extended key is not just an implementation convenience. Lean proof states are local objects: the
-meaning of a goal depends on the local declarations that are in scope, the order in which they were
-introduced, and the proof term in which the goal appears. Two child subgoals may display the same
-target proposition but have different sibling placeholders or different parent assembly code. If the search
-merged those subgoals by goal text alone, a proof fragment generated for one location could be inserted
-into another location where it is ill-scoped or where it accidentally changes the parent proof. The scaffold
-hash and target index prevent this class of error by making the placeholder position part of the state
-identity.
-
-The framework therefore distinguishes three levels of equality. Textual equality means that two displayed
-goals have the same pretty-printed target. Local-context equality additionally requires the same available
-hypotheses and variables. Scaffold equality requires the same parent proof context and the same target
-placeholder. GammaZero uses the third notion for scaffolded subgoals because final proof construction is
-an editing problem: a solution must be inserted into a specific hole of a specific proof body.
-
-\subsection{Action Space: Terminal Tactics vs Proof Skeletons}
-
-We partition the action space into two disjoint sets:
-\[
-\mathcal{A} = \mathcal{A}_{tac} \cup \mathcal{A}_{skel}.
+\mathcal{A} = \mathcal{A}_{local} \cup \mathcal{A}_{skel}.
 \]
 
-\paragraph{Terminal tactic actions.}
-A terminal tactic action is a complete local tactic sequence whose intended outcome is to discharge the current goal. It must not contain \texttt{sorry} or \texttt{admit}. Although such a sequence may internally use tactics such as \texttt{constructor}, \texttt{cases}, or \texttt{have}, it is accepted as a terminal action only if Lean reports no remaining goals for the current node:
-\[
-\mathcal{T}(s,a) = \emptyset.
-\]
-If the sequence leaves subgoals, it is treated as a failed or partial terminal attempt, not as a decomposition action.
-If a terminal tactic sequence leaves unresolved goals, the action may still be repaired by the Sorrifier for immediate reward estimation, but it is not allowed to expand the AND/OR graph. Only skeleton actions can intentionally introduce child proof states.
+\paragraph{Local proof actions.}
+A local proof action is a generated Lean proof body for the current target hole. Its goal is to close the current proof state inside the current scaffold. The action may contain multiple tactics and may temporarily create subgoals during execution. However, it is accepted as a successful local proof action only if all of these goals are solved by the end of the generated proof body.
 
-This rule is intentionally strict. Lean tactics such as \texttt{constructor} or \texttt{cases} can create
-subgoals, and many tactic proofs are naturally multi-step. However, allowing every tactic attempt that
-leaves goals to expand the graph would blur the boundary between local solving and proof
-decomposition. GammaZero instead treats a terminal tactic as a promise: the candidate claims that it can
-finish the current node. If it fails to finish, the system may still learn from the failure through
-\(r_{env}\), but the graph is not expanded from that action.
+If a local proof action leaves any unresolved goal, it fails as a local proof action. It is not converted into a decomposition and it does not create child proof states in the search graph. This rule keeps the meaning of local proof actions simple: they either solve the current state or fail at that state.
 
-\paragraph{Proof skeleton actions.}
-A proof skeleton action is the only action type allowed to intentionally create subgoals. Its output is Lean code with explicit placeholders, typically through named local declarations introduced by \texttt{have}, \texttt{suffices}, \texttt{cases}, \texttt{induction}, or a structured proof block. Executing a skeleton yields successor states
-\[
-\mathcal{T}(s,a) = \{s'_1,\ldots,s'_k\}, \qquad k \ge 1,
-\]
-and all successors must be solved for the skeleton to be successful.
+This design reduces the number of search decisions inside one proof state. In a tactic-level search, each small tactic step may become a new search decision. In GammaZero, a local proof action represents a complete local attempt. Since it does not expand the graph, the growth of the graph is controlled mainly by skeleton actions.
 
-In the implementation, a proof skeleton is represented as a Lean proof block containing explicit
-\texttt{sorry} placeholders. The skeleton is not a complete proof; instead, it specifies an intermediate
-proof structure whose unresolved parts are delegated to later search. A proof obligation is a subgoal
-that must be proved before the parent proof can be completed. Every new proof obligation introduced by
-a skeleton must be a named local declaration such as \texttt{have h\_step : P := by sorry}. A naked final
-\texttt{sorry} is rejected because it does not expose a named subgoal that can be tracked, solved, and stitched back into the
-parent proof. Typical skeletons introduce intermediate claims using constructs such as \texttt{have},
-\texttt{suffices}, \texttt{cases}, or \texttt{induction}. For example:
+\paragraph{Skeleton actions.}
+A skeleton action is a generated Lean proof body that introduces intermediate proof structure. It may use constructs such as \texttt{have}, \texttt{suffices}, \texttt{cases}, or \texttt{induction}. Unlike a local proof action, a skeleton action is allowed to create child subgoals.
+
+A skeleton action does not merely list subgoals. It also describes how the resulting proof pieces are intended to support the current goal. For example:
 \begin{verbatim}
 intro hp
 have hq : Q := by
   sorry
 exact h2 hq
 \end{verbatim}
+The intermediate statement \(Q\) becomes a child subgoal, while the last line shows how the completed proof of \(Q\) will be used to continue the parent proof.
 
-When such a block is executed, Lean reports the proof states associated with the unresolved
-\texttt{sorry} placeholders. Each reported proof state is converted into a child \texttt{ProofState}
-node in the search graph. Therefore, a skeleton containing multiple placeholders produces multiple
-child OR nodes. The skeleton action itself is treated as an AND node: the action is considered solved
-only if every generated child proof state is eventually solved.
+A skeleton action may create zero or more child subgoals. If it creates no child subgoal and the current state is solved, it is simply a successful action. If it creates child subgoals, then all of them must eventually be solved for the skeleton to succeed. In the search graph, the child subgoals become child proof states.
 
-Skeletons are allowed to be incomplete by construction, but they must be recoverable into a
-placeholder-compilable script. Skeleton actions may contain \texttt{sorry} only for named leaf subgoals
-and must not contain \texttt{admit}. If a generated skeleton contains syntax or elaboration errors, the
-Sorrifier attempts to patch the failing region with \texttt{sorry}. The patched skeleton may still
-be used for partial reward estimation and graph expansion, but it is not considered a verified proof.
-Final theorem success always requires a proof with no real \texttt{sorry} or \texttt{admit} placeholders.
-
-The named-subgoal requirement gives each child a stable handle. A declaration name such as
-\texttt{h\_step} can be used by later lines of the parent skeleton, can be reported in logs, and can be
-associated with a proof body during stitching. A naked final placeholder has none of these properties: it
-collapses the entire remaining proof into one anonymous hole and gives the dependency analyzer little
-structure to inspect. For this reason, GammaZero rejects skeletons that merely end with \texttt{sorry}
-without exposing a local declaration or structured subgoal.
+This gives the graph an AND/OR structure. OR nodes are proof states, because a proof state can be solved by any successful outgoing action. Skeleton actions have AND semantics, because every child proof state created by the skeleton must be solved. This structure matches proof decomposition: a decomposition is useful only when all required subgoals can be completed and connected back to the parent proof.
 
 \subsection{Running Example}
 
-Consider:
+Consider the following simple theorem:
 \begin{verbatim}
-theorem imp_trans
+theorem split_imp
 (P Q R : Prop)
-(h1 : P -> Q)
-(h2 : Q -> R) :
-P -> R := by
+(hpq : P -> Q)
+(hpr : P -> R) :
+P -> Q /\ R := by
 \end{verbatim}
 
-The initial proof state is:
-\begin{verbatim}
-P Q R : Prop
-h1 : P -> Q
-h2 : Q -> R
-|- P -> R
-\end{verbatim}
-
-A terminal tactic sequence can close the goal directly:
+The initial goal is to prove \(P \to Q \land R\). A local proof action may solve the goal directly:
 \begin{verbatim}
 intro hp
-exact h2 (h1 hp)
+exact And.intro (hpq hp) (hpr hp)
 \end{verbatim}
 
-A skeleton action instead exposes the intermediate claim \(Q\):
+If Lean accepts this proof body and no goal remains, the current proof state is solved. This action does
+not create child proof states. It is a complete local attempt for the current target hole.
+
+A skeleton action may instead expose the two intermediate facts \(Q\) and \(R\):
 \begin{verbatim}
 intro hp
 have hq : Q := by
   sorry
-exact h2 hq
+have hr : R := by
+  sorry
+exact And.intro hq hr
 \end{verbatim}
 
-This skeleton creates a new subgoal \(Q\) under the local context containing \(hp : P\). The tactic resolver is then responsible for filling the placeholder, for example with:
+This skeleton does more than list two subgoals. It also gives the proof structure that will use the
+subgoals after they are solved. The declarations \texttt{hq} and \texttt{hr} are the intermediate facts, and
+the final line
 \begin{verbatim}
-exact h1 hp
+exact And.intro hq hr
 \end{verbatim}
+explains how they are combined to prove the parent goal.
 
-This example is simple, but it illustrates the intended boundary: the skeleton introduces the intermediate subgoal, while terminal tactics solve local goals.
-
-The same idea scales to more realistic proofs in which the intermediate claim is not obvious from the
-statement. For example, a proof may need a small normalization lemma, an arithmetic bound, or a
-case-split invariant before the final theorem can be discharged. In such situations, a skeleton is useful
-because it exposes the hidden lemma as a named child state. The search then explores the lemma in
-exactly the context where it will be used, rather than trying to rediscover it as an unstructured tactic
-sequence. That is the practical appeal of decomposition: it makes latent proof structure explicit enough
-for a search policy to reason about it.
-
-A more complex skeleton may introduce several intermediate subgoals schematically:
+The two placeholders create two child subgoals. When the system focuses on the first child, the scaffold
+keeps the surrounding proof structure, but only the proof of \texttt{hq} remains as the target:
 \begin{verbatim}
-have h_pos : ... := by
+intro hp
+have hq : Q := by
   sorry
-have h_bound : ... := by
-  sorry
-have h_exists : ... := by
-  sorry
-have h_final : ... := by
-  sorry
-exact h_final
+have hr : R := by
+  admit
+exact And.intro hq hr
 \end{verbatim}
-Each \texttt{sorry} corresponds to one child proof state. This schematic example is not intended to be a complete Lean theorem; it illustrates how a skeleton can expose several named proof obligations before the final step consumes the resulting intermediate claim.
 
-In a real search run, each of these child subgoals may have its own local proof style. One child may be
-closed immediately by a rewrite. Another may need a short arithmetic proof. A third may fail under the
-current search limits and remain open for later expansion. GammaZero keeps these states separate so
-that a successful branch is not lost because a sibling branch is still open. The parent skeleton remains
-active only if the system has reason to believe that the remaining subgoals are still worth exploring.
+The current node is responsible only for replacing the target \texttt{sorry}. The sibling subgoal
+\texttt{hr} is temporarily represented by \texttt{admit}, meaning that it is not solved by this node. In this
+scaffold, the proof of \texttt{hq} can be:
+\begin{verbatim}
+exact hpq hp
+\end{verbatim}
+
+When the system focuses on the second child, the roles are reversed:
+\begin{verbatim}
+intro hp
+have hq : Q := by
+  admit
+have hr : R := by
+  sorry
+exact And.intro hq hr
+\end{verbatim}
+
+Now the target is the proof of \texttt{hr}, and the proof body can be:
+\begin{verbatim}
+exact hpr hp
+\end{verbatim}
+
+The use of \texttt{admit} here is temporary. It allows the system to check one child proof inside the
+parent scaffold while the sibling child is still open. These checks are not final proofs of the theorem.
+They only verify whether a proposed replacement is valid in the proof context where it will later be used.
+
+After both children are solved, GammaZero inserts the solved proof bodies back into the original skeleton:
+\begin{verbatim}
+intro hp
+have hq : Q := by
+  exact hpq hp
+have hr : R := by
+  exact hpr hp
+exact And.intro hq hr
+\end{verbatim}
+
+The completed scaffold is then checked again by Lean. This final check is essential: the parent proof is
+accepted only if the stitched proof contains no remaining \texttt{sorry} or \texttt{admit} and Lean verifies
+the whole block.
+
+This example illustrates the boundary between the two action types. A local proof action tries to close
+the current target directly. A skeleton action introduces intermediate proof structure and may create
+child subgoals. Each child is solved in the scaffold where it was created, and the parent skeleton succeeds
+only when all required children are solved and the completed proof is accepted by Lean.
+
+The example is simple, but the same pattern applies to larger proofs. A difficult theorem may require
+intermediate bounds, normalization steps, case-specific facts, or auxiliary lemmas that are not explicit in
+the theorem statement. A skeleton makes such hidden structure explicit. Instead of forcing the search to
+discover a long tactic sequence step by step, the system can first propose a proof structure, then solve the
+child subgoals inside that structure.
 
 \subsection{AND/OR Proof Search Objective}
 
-We model search as a graph \(G=(V,E)\). Each OR node is a proof state \(s=(\Gamma,g)\). From an OR node, the policy selects among alternative terminal tactics or skeletons. A terminal tactic succeeds if it closes the node. A skeleton creates an AND node whose children are the generated subgoals.
+We model search as a graph \(G=(V,E)\). Each OR node is a proof state, and each proof state records the full scaffold and the target position inside that scaffold. From an OR node, the policy selects among alternative terminal tactics or skeletons. A terminal tactic succeeds if it replaces the target \texttt{sorry} with a proof body that Lean accepts in the current scaffold. A skeleton creates an AND node whose children are the generated subgoals.
 
 For an OR node, the value is determined by the best outgoing action:
 \[
 V(s) = \max_{a \in \mathcal{A}(s)} Q(s,a).
 \]
-For a skeleton action with children \(S'=\{s'_1,\ldots,s'_k\}\), success requires all children to be solved. We therefore use a conservative conjunction:
+For a skeleton action with children \(S'=\{s'_1,\ldots,s'_k\}\), success requires all children to be solved and stitchable into the parent scaffold. We therefore use a conservative conjunction:
 \[
 V_{\text{AND}}(a) = \min_{s' \in S'} V(s').
 \]
@@ -551,18 +558,29 @@ Status & Meaning \\
 \end{tabular}
 \end{center}
 
-For skeleton actions, we use hard AND semantics. A skeleton is marked solved only if all of its generated child proof states are solved. If a skeleton produces multiple subgoals and even one child remains open when the search limits are reached, the skeleton is not considered solved. Consequently, the skeleton does not receive delayed structural reward or future-value credit from its children. It may still receive immediate syntactic reward from the recovered or successfully compiled skeleton itself. This design discourages the policy from generating large decompositions that solve only easy auxiliary subgoals while leaving difficult branches unresolved.
+For skeleton actions, we use hard AND semantics. A skeleton is marked solved only if all of its generated child proof states are solved and the stitched skeleton passes Lean verification. If a skeleton produces multiple subgoals and even one child remains open when the search limits are reached, the skeleton is not considered solved. Consequently, the skeleton does not receive delayed structural reward or future-value credit from its children. It may still receive immediate syntactic reward from the recovered or successfully compiled skeleton itself. This design discourages the policy from generating large decompositions that solve only easy auxiliary subgoals while leaving difficult branches unresolved.
 
 \subsection{Formal Invariants}
 
-The formulation is governed by a small set of invariants. First, a state can be marked \texttt{SOLVED}
-only by a Lean verification result with no real placeholder. A repaired script that contains \texttt{sorry}
-may contribute reward information, but it cannot solve a node. Second, a tactic action can solve a state
-but cannot create child states. Third, a skeleton action can create child states but cannot solve its parent
-until every required child has been solved and stitched back into the skeleton. Fourth, a scaffolded
-subgoal solution must preserve sibling \texttt{admit} placeholders and replace only the target
-\texttt{sorry}. These invariants are checked at different points of the pipeline, but together they define the
-correctness boundary of the graph.
+The formulation is governed by a small set of invariants. First, every node with a scaffold has exactly one
+target \texttt{sorry}. That target is the only location the node may solve. Second, sibling subgoals are
+represented by \texttt{admit} while the current target is being solved, and those \texttt{admit} markers must
+remain unchanged by the candidate action. Third, a tactic action can solve the current target but cannot
+create child states. Fourth, a skeleton action can create child states by extending the current scaffold
+with named proof obligations, but it cannot solve its parent until every required child has been solved
+and stitched back into the skeleton. Fifth, a state can be marked \texttt{SOLVED} only by a Lean
+verification result for the relevant scaffold position with no \texttt{sorry}, \texttt{admit}, or temporary verification-bypass tactic in the replacement. A
+repaired script that contains \texttt{sorry} may contribute reward information, but it cannot solve a node.
+These invariants are checked at different points of the pipeline, but together they define the correctness
+boundary of the graph.
+
+The final invariant is global: temporary \texttt{admit} placeholders are never part of an accepted theorem.
+They are used only to isolate node responsibilities during search. Once the graph claims that a parent
+skeleton is solved, GammaZero stitches the solved child proof bodies into the parent scaffold and asks
+Lean to verify the assembled block. The root theorem is accepted only after this recursive assembly
+reaches the root and Lean verifies the complete theorem without unresolved placeholders. Thus the scaffold
+lets the model solve one target at a time while preserving the global proof context and the final Lean
+correctness boundary.
 
 The invariants also clarify how failure is represented. Parser errors, elaboration errors, timeouts, and
 policy-check rejections are all failed actions, not failed theorems. An open state that is not solved within
@@ -616,7 +634,7 @@ GammaZero does not solve a skeleton child as an isolated theorem. When a skeleto
 solve exactly this \texttt{sorry}; keep every \texttt{admit} unchanged.
 \end{quote}
 
-Each scaffolded state records the scaffold hash, target kind, target index, and, when available, the target label inferred from the local declaration. For example, if the target placeholder appears in \texttt{have h\_step : P := by sorry}, the target label is \texttt{h\_step}. These fields are part of state identity, so two equal-looking goals are not conflated when they occupy different scaffold positions.
+Each state with a scaffold records the scaffold hash, target kind, target index, and, when available, the target label inferred from the declaration that contains the target. For example, if the target placeholder appears in \texttt{have h\_step : P := by sorry}, the target label is \texttt{h\_step}. These fields are part of state identity, so two equal-looking goals are not conflated when they occupy different scaffold positions.
 
 This representation is also used for nested skeletons. A subgoal tactic must replace only the target placeholder and must not modify sibling \texttt{admit} placeholders. A subgoal mini-skeleton may introduce further named subgoals, but the extracted replacement is still checked against the original scaffold before it is accepted.
 

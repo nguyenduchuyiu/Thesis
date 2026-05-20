@@ -12,107 +12,119 @@
 \citation{demoura2021lean4}
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.3}Contributions}{3}{subsection.1.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {1.4}Thesis Organization}{3}{subsection.1.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Background and Related Work}{3}{section.2}\protected@file@percent }
-\newlabel{sec:background}{{2}{3}{Background and Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Background}{3}{section.2}\protected@file@percent }
+\newlabel{sec:background}{{2}{3}{Background}{section.2}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Lean 4 and Formal Proof Checking}{3}{subsection.2.1}\protected@file@percent }
 \citation{yang2023leandojo}
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}LLM-based Theorem Proving}{4}{subsection.2.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Search-based Proof Generation}{4}{subsection.2.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Reinforcement Learning and Sparse Rewards}{4}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Reinforcement Learning and Sparse Feedback}{4}{subsection.2.4}\protected@file@percent }
 \citation{polu2020gptf}
 \citation{lample2022hypertree}
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Research Gap}{5}{subsection.2.5}\protected@file@percent }
+\citation{yang2023leandojo}
 \@writefile{toc}{\contentsline {section}{\numberline {3}Literature Review}{5}{section.3}\protected@file@percent }
 \newlabel{sec:literature}{{3}{5}{Literature Review}{section.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Neural Theorem Proving and Language Models}{5}{subsection.3.1}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Search Procedures for Formal Proofs}{5}{subsection.3.2}\protected@file@percent }
-\citation{yang2023leandojo}
 \citation{jiang2022thor}
 \citation{jiang2022draft}
 \citation{zheng2021minif2f}
 \citation{ospanov2025minif2fLeanRevisited}
+\citation{azerbayev2023proofnet}
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Retrieval, Premise Selection, and Hammers}{6}{subsection.3.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Sketching, Decomposition, and Informal Guidance}{6}{subsection.3.4}\protected@file@percent }
-\citation{azerbayev2023proofnet}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Benchmarks and Evaluation Datasets}{6}{subsection.3.5}\protected@file@percent }
 \citation{wu2022autoformalization}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Benchmarks and Evaluation Datasets}{7}{subsection.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Positioning of GammaZero}{7}{subsection.3.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Autoformalization and Future Policy Optimization}{7}{subsection.3.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Problem Formulation}{8}{section.4}\protected@file@percent }
-\newlabel{sec:problem-formulation}{{4}{8}{Problem Formulation}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Lean Proof State}{8}{subsection.4.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Action Space: Terminal Tactics vs Proof Skeletons}{8}{subsection.4.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Terminal tactic actions.}{9}{section*.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Proof skeleton actions.}{9}{section*.2}\protected@file@percent }
+\citation{azerbayev2023proofnet}
+\citation{ospanov2025minif2fLeanRevisited}
+\citation{kaliszyk2018reinforcement}
+\citation{bansal2019holist}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Autoformalization}{7}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}Reinforcement Learning for Theorem Proving}{7}{subsection.3.7}\protected@file@percent }
+\citation{polu2020gptf}
+\citation{xin2024deepseekproverv15}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8}Positioning of GammaZero}{8}{subsection.3.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Problem Formulation}{9}{section.4}\protected@file@percent }
+\newlabel{sec:problem-formulation}{{4}{9}{Problem Formulation}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Proof States and Proof Scaffolds}{9}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Action Space: Local Proof Actions and Skeleton Actions}{9}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Local proof actions.}{9}{section*.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Skeleton actions.}{10}{section*.2}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Running Example}{10}{subsection.4.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}AND/OR Proof Search Objective}{11}{subsection.4.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Reward and Credit Assignment Challenges}{11}{subsection.4.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Formal Invariants}{12}{subsection.4.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Proposed Framework}{12}{section.5}\protected@file@percent }
-\newlabel{sec:framework}{{5}{12}{Proposed Framework}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Objects and Graph Representation}{12}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}End-to-End Lifecycle}{12}{subsection.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Scaffold-Aware Subgoal Representation}{13}{subsection.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Model Interface and Output Parsing}{13}{subsection.5.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Lean Server Interface}{14}{subsection.5.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Search with Limited Generated Actions and Limited Depth}{14}{subsection.5.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Tactic-First Expansion}{14}{subsection.5.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Skeleton Commitment and Fallback}{15}{subsection.5.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.9}State and Skeleton Priority Scores}{15}{subsection.5.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Final Proof Construction}{16}{subsection.5.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}AST-Guided Sorrifier}{16}{section.6}\protected@file@percent }
-\newlabel{sec:Sorrifier}{{6}{16}{AST-Guided Sorrifier}{section.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Motivation}{16}{subsection.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Failure Taxonomy}{16}{subsection.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}AST-based Error Localization}{17}{subsection.6.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Iterative Patching Algorithm}{18}{subsection.6.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Dense Syntactic Reward Extraction}{18}{subsection.6.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Examples and Case Studies}{19}{subsection.6.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 1: Parser error.}{19}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 2: Unresolved name and cascade cleanup.}{19}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 3: Skeleton partial recovery.}{20}{section*.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 4: Type mismatch.}{20}{section*.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7}Dense Reward and Credit Assignment}{20}{section.7}\protected@file@percent }
-\newlabel{sec:reward}{{7}{20}{Dense Reward and Credit Assignment}{section.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Immediate Reward}{20}{subsection.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Dependency-aware Structural Reward}{21}{subsection.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}AND/OR Backup}{22}{subsection.7.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Reward Computation and Training Data Generation}{23}{subsection.7.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Trajectory Export and Final Verification}{23}{subsection.7.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {8}Experiments}{24}{section.8}\protected@file@percent }
-\newlabel{sec:experiments}{{8}{24}{Experiments}{section.8}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Experimental Scope}{24}{subsection.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}AND/OR Proof Search Objective}{12}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Reward and Credit Assignment Challenges}{12}{subsection.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Formal Invariants}{13}{subsection.4.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Proposed Framework}{13}{section.5}\protected@file@percent }
+\newlabel{sec:framework}{{5}{13}{Proposed Framework}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Objects and Graph Representation}{13}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}End-to-End Lifecycle}{13}{subsection.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Scaffold-Aware Subgoal Representation}{14}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Model Interface and Output Parsing}{14}{subsection.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Lean Server Interface}{15}{subsection.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Search with Limited Generated Actions and Limited Depth}{15}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7}Tactic-First Expansion}{16}{subsection.5.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8}Skeleton Commitment and Fallback}{16}{subsection.5.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.9}State and Skeleton Priority Scores}{16}{subsection.5.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.10}Final Proof Construction}{17}{subsection.5.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}AST-Guided Sorrifier}{17}{section.6}\protected@file@percent }
+\newlabel{sec:Sorrifier}{{6}{17}{AST-Guided Sorrifier}{section.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1}Motivation}{17}{subsection.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2}Failure Taxonomy}{18}{subsection.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3}AST-based Error Localization}{19}{subsection.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4}Iterative Patching Algorithm}{19}{subsection.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5}Dense Syntactic Reward Extraction}{19}{subsection.6.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6}Examples and Case Studies}{20}{subsection.6.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 1: Parser error.}{20}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 2: Unresolved name and cascade cleanup.}{21}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 3: Skeleton partial recovery.}{21}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 4: Type mismatch.}{21}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Dense Reward and Credit Assignment}{22}{section.7}\protected@file@percent }
+\newlabel{sec:reward}{{7}{22}{Dense Reward and Credit Assignment}{section.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Immediate Reward}{22}{subsection.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Dependency-aware Structural Reward}{22}{subsection.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}AND/OR Backup}{23}{subsection.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4}Reward Computation and Training Data Generation}{24}{subsection.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.5}Trajectory Export and Final Verification}{24}{subsection.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8}Experiments}{25}{section.8}\protected@file@percent }
+\newlabel{sec:experiments}{{8}{25}{Experiments}{section.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.1}Experimental Scope}{25}{subsection.8.1}\protected@file@percent }
 \citation{mathlib2020}
 \citation{ospanov2025minif2fLeanRevisited}
 \citation{zheng2021minif2f}
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Setup}{25}{subsection.8.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Lean environment.}{25}{section*.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Hardware.}{25}{section*.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Policy model.}{25}{section*.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Search configuration.}{25}{section*.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Generation configuration.}{25}{section*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Dataset}{25}{subsection.8.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Metrics}{25}{subsection.8.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Ablations}{26}{subsection.8.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}Analysis Protocol}{26}{subsection.8.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.7}Reproducibility Considerations}{27}{subsection.8.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.8}Threats to Validity}{27}{subsection.8.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion and Limitations}{28}{section.9}\protected@file@percent }
-\newlabel{sec:conclusion}{{9}{28}{Conclusion and Limitations}{section.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2}Setup}{26}{subsection.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Lean environment.}{26}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Hardware.}{26}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Policy model.}{26}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Search configuration.}{26}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Generation configuration.}{26}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3}Dataset}{26}{subsection.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4}Metrics}{27}{subsection.8.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Ablations}{27}{subsection.8.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}Analysis Protocol}{28}{subsection.8.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.7}Reproducibility Considerations}{28}{subsection.8.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.8}Threats to Validity}{28}{subsection.8.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion and Limitations}{29}{section.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{29}{Conclusion and Limitations}{section.9}{}}
 \bibstyle{plainnat}
 \bibdata{sample}
 \bibcite{azerbayev2023proofnet}{{1}{2023}{{Azerbayev et~al.}}{{Azerbayev, Piotrowski, Schoelkopf, Ayers, Radev, and Avigad}}}
-\bibcite{demoura2021lean4}{{2}{2021}{{de~Moura and Ullrich}}{{}}}
-\bibcite{jiang2022thor}{{3}{2022{}}{{Jiang et~al.}}{{Jiang, Li, Tworkowski, Czechowski, Odrzyg{\'o}{\'z}d{\'z}, Mi{\l }o{\'s}, Wu, and Jamnik}}}
-\bibcite{jiang2022draft}{{4}{2022{}}{{Jiang et~al.}}{{Jiang, Welleck, Zhou, Li, Liu, Jamnik, Lacroix, Wu, and Lample}}}
-\bibcite{lample2022hypertree}{{5}{2022}{{Lample et~al.}}{{Lample, Lachaux, Lavril, Martinet, Hayat, Ebner, Rodriguez, and Lacroix}}}
-\bibcite{ospanov2025minif2fLeanRevisited}{{6}{2025}{{Ospanov et~al.}}{{Ospanov, Farnia, and Yousefzadeh}}}
-\bibcite{polu2020gptf}{{7}{2020}{{Polu and Sutskever}}{{}}}
-\bibcite{mathlib2020}{{8}{2020}{{The mathlib Community}}{{}}}
-\bibcite{wu2022autoformalization}{{9}{2022}{{Wu et~al.}}{{Wu, Jiang, Li, Rabe, Staats, Jamnik, and Szegedy}}}
-\bibcite{yang2023leandojo}{{10}{2023}{{Yang et~al.}}{{Yang, Swope, Gu, Chalamala, Song, Yu, Godil, Prenger, and Anandkumar}}}
-\bibcite{zheng2021minif2f}{{11}{2022}{{Zheng et~al.}}{{Zheng, Han, and Polu}}}
-\@writefile{toc}{\contentsline {section}{\numberline {A}Reward Hacking Derivation}{30}{appendix.A}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {B}Design Assumptions and Limitations}{30}{appendix.B}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {C}Extra Implementation Questions}{31}{appendix.C}\protected@file@percent }
-\gdef \@abspage@last{31}
+\bibcite{bansal2019holist}{{2}{2019}{{Bansal et~al.}}{{Bansal, Loos, Rabe, Szegedy, and Wilcox}}}
+\bibcite{seedProver}{{3}{2025}{{Chen et~al.}}{{Chen, Gu, Huang, Huang, Jiang, Jie, Jin, Jin, Li, Ma, Ren, Shen, Shi, Sun, Sun, Wang, Wang, Wang, Wei, Wei, Wu, Wu, Xia, Xin, Yang, Ying, Yuan, Yuan, Zhan, Zhang, Zhang, Zhang, Zhao, Zhao, Zhou, and Zhu}}}
+\bibcite{demoura2021lean4}{{4}{2021}{{de~Moura and Ullrich}}{{}}}
+\bibcite{ProD}{{5}{2024}{{Dong et~al.}}{{Dong, Mahankali, and Ma}}}
+\bibcite{jiang2022thor}{{6}{2022{a}}{{Jiang et~al.}}{{Jiang, Li, Tworkowski, Czechowski, Odrzyg{\'o}{\'z}d{\'z}, Mi{\l }o{\'s}, Wu, and Jamnik}}}
+\bibcite{jiang2022draft}{{7}{2022{b}}{{Jiang et~al.}}{{Jiang, Welleck, Zhou, Li, Liu, Jamnik, Lacroix, Wu, and Lample}}}
+\bibcite{kaliszyk2018reinforcement}{{8}{2018}{{Kaliszyk et~al.}}{{Kaliszyk, Urban, Michalewski, and Ols{\'a}k}}}
+\bibcite{lample2022hypertree}{{9}{2022}{{Lample et~al.}}{{Lample, Lachaux, Lavril, Martinet, Hayat, Ebner, Rodriguez, and Lacroix}}}
+\bibcite{apollo}{{10}{2025{a}}{{Ospanov et~al.}}{{Ospanov, Farnia, and Yousefzadeh}}}
+\bibcite{ospanov2025minif2fLeanRevisited}{{11}{2025{b}}{{Ospanov et~al.}}{{Ospanov, Farnia, and Yousefzadeh}}}
+\bibcite{polu2020gptf}{{12}{2020}{{Polu and Sutskever}}{{}}}
+\bibcite{mathlib2020}{{13}{2020}{{The mathlib Community}}{{}}}
+\bibcite{wu2022autoformalization}{{14}{2022}{{Wu et~al.}}{{Wu, Jiang, Li, Rabe, Staats, Jamnik, and Szegedy}}}
+\bibcite{xin2024deepseekproverv15}{{15}{2024}{{Xin et~al.}}{{Xin, Ren, Song, Shao, Zhao, Wang, Liu, Zhang, Lu, Du, Gao, Zhu, Yang, Gou, Wu, Luo, and Ruan}}}
+\bibcite{yang2023leandojo}{{16}{2023}{{Yang et~al.}}{{Yang, Swope, Gu, Chalamala, Song, Yu, Godil, Prenger, and Anandkumar}}}
+\bibcite{zheng2021minif2f}{{17}{2022}{{Zheng et~al.}}{{Zheng, Han, and Polu}}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Reward Hacking Derivation}{31}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B}Design Assumptions and Limitations}{32}{appendix.B}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C}Extra Implementation Questions}{32}{appendix.C}\protected@file@percent }
+\gdef \@abspage@last{32}
