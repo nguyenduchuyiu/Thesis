@@ -1121,37 +1121,46 @@ testing both local tactic generation and higher-level proof decomposition becaus
 competition-style mathematics such as algebra, number theory, and inequalities.
 
 \subsection{Metrics}
-We report root solved rate without placeholders, pass@k, generated actions, Lean verification calls, repaired candidates, inserted skeletons, commitment/fallback count, queue pruning count, average solved depth, policy-check rejection rate, subgoal extraction failure rate, and dependency-class distribution.
 
-Root solved rate is computed only from final Lean-verified proofs that contain no real \texttt{sorry} or
-\texttt{admit}. This metric is deliberately strict: placeholder-compilable proofs, partially solved skeletons,
-and repaired scripts do not count as solved roots. Pass@k is used when multiple independent search runs
-or sampled attempts are available for the same theorem; it estimates whether at least one attempt within
-the allowed set solves the theorem.
+We report metrics in four groups: proof success, search cost, recovery behavior, and decomposition quality. This grouping is useful because GammaZero is not evaluated only as a prover, but also as a system that produces structured search trajectories for future optimization.
 
-Generated actions count all local proof and skeleton proposals that pass through the model interface. Lean
-verification calls count executions sent to the persistent Lean workers, including checks used during
-repair and final verification. These two counts are separated because one generated action may trigger
-several Lean calls if it requires repair, while a rejected action may trigger no full verification if it fails a
-policy check first. Reporting both numbers makes the compute profile clearer.
+\paragraph{Proof success.}
+The main correctness metric is root solved rate without placeholders. A root theorem is counted as solved only when the final reconstructed proof is accepted by Lean and contains no real \texttt{sorry} or \texttt{admit}. This metric is deliberately strict: placeholder-compilable proofs, partially solved skeletons, and repaired scripts do not count as solved roots.
 
-Repaired candidates measure how often the Sorrifier was needed. A high repair rate can be read in
-two ways: the model may be producing many invalid candidates, but the recovery module may also be
-successfully extracting signal that would otherwise be lost. For this reason, repair rate should be
-interpreted together with syntactic reward and downstream dependency reward. A repaired candidate
-that preserves useful structure is different from one that collapses to a single placeholder.
+When multiple independent runs or sampled attempts are available for the same theorem, we also report pass@k. This measures whether at least one attempt within the allowed set solves the theorem.
 
-Inserted skeletons, commitment counts, and fallback counts measure whether decomposition is being used
-in a controlled way. If skeleton generation is frequent but commitment is rare, the model may be
-proposing invalid or low-quality decompositions. If fallback is frequent, the initial skeleton ranking may
-be weak or the search limits may be too tight. If commitment is common but child solve rates are low,
-the decomposition may expose subgoals that are too hard for the current local proof policy.
+\paragraph{Search cost.}
+Generated actions count all local proof and skeleton proposals produced by the model interface. Lean verification calls count executions sent to Lean, including calls used during repair and final verification. These two numbers are reported separately because one generated action may trigger several Lean calls if it requires repair, while a rejected action may trigger no full verification if it fails an action check first.
 
-Dependency-class distribution is the main structural metric for skeleton quality. A good skeleton should
-increase solved-and-used declarations, keep solved-but-unused declarations low, and avoid unresolved
-unused subgoals. The distribution also helps diagnose reward hacking. If many skeletons create large
-numbers of unused declarations while still receiving high syntactic reward, then syntactic survival is not
-enough and the dependency term is necessary.
+We also report average solved depth and queue pruning count. Average solved depth measures how far the search descends before completing a proof. Queue pruning count measures how often the search removes low-priority open states to stay within its limits.
+
+\paragraph{Recovery behavior.}
+Repaired candidates measure how often the Sorrifier is needed. A high repair rate can have two meanings: the model may be producing many invalid candidates, or the recovery module may be extracting useful signal that would otherwise be discarded. For this reason, repair rate should be interpreted together with syntactic reward and later dependency reward. A repaired candidate that preserves useful proof structure is different from one that collapses to a single placeholder.
+
+Policy-check rejection rate and subgoal extraction failure rate are also reported. These metrics measure whether generated outputs follow the required action format. A high rejection rate indicates that the model often violates the local proof or skeleton action rules. A high extraction failure rate indicates that generated skeletons or scaffold edits are difficult to map back to the focused target hole.
+
+\paragraph{Decomposition quality.}
+Inserted skeletons, commitment counts, and fallback counts measure how proof decomposition is used during search. If skeleton generation is frequent but commitment is rare, the model may be proposing invalid or low-quality decompositions. If fallback is frequent, the first committed skeleton may be unreliable or the search limits may be too tight. If commitment is common but child solve rates are low, the decomposition may expose subgoals that are too difficult for the current local proof policy.
+
+Dependency-class distribution is the main structural metric for skeleton quality. A good skeleton should increase solved-and-used declarations, keep solved-but-unused declarations low, and avoid unresolved unused subgoals. This distribution also helps diagnose reward hacking. If many skeletons create unused declarations while still receiving high syntactic reward, then syntactic survival alone is not enough, and the dependency reward is necessary.
+
+\subsection{Main Results}
+
+TODO: Insert the main result table.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrr}
+\hline
+Setting & Solved & Solve Rate & Generated Actions & Lean Calls \\
+\hline
+GammaZero & TODO & TODO & TODO & TODO \\
+\hline
+\end{tabular}
+\caption{Main proof-search results on the evaluation split.}
+\end{table}
+
+TODO: Discuss root solved rate, average search cost, repair rate, and final verification success.
 
 \subsection{Ablations}
 We evaluate the following ablations: no Sorrifier, no scaffold-aware subgoal solving, no local-proof-first rule, no skeleton commitment, no dependency reward, FIFO/level-wise selection versus priority queue, and different generated-action and depth limits.
@@ -1171,26 +1180,42 @@ root solve rate remains modest, because the thesis contribution is the generatio
 search structure. In other words, a partially successful system can still be a good thesis result if it makes
 proof search more analyzable, more inspectable, and better suited to future optimization.
 
-\subsection{Analysis Protocol}
+TODO: Insert ablation table.
 
-The analysis proceeds in three layers. The first layer is theorem-level correctness: how many roots are
-solved, how many attempts are needed, and how often final stitching succeeds. The second layer is
-search behavior: how many states are opened, how the priority queue allocates expansions, and how often
-states are pruned. The third layer is data quality: how much repair signal is recovered, how skeleton
-dependencies are classified, and how many actions are suitable for future optimization.
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrrr}
+\hline
+Setting & Solved & Lean Calls & Repair Rate & Inserted Skeletons \\
+\hline
+Full GammaZero & TODO & TODO & TODO & TODO \\
+No Sorrifier & TODO & TODO & TODO & TODO \\
+No local-proof-first & TODO & TODO & TODO & TODO \\
+No skeleton commitment & TODO & TODO & TODO & TODO \\
+FIFO / level-wise & TODO & TODO & TODO & TODO \\
+\hline
+\end{tabular}
+\caption{Ablation results.}
+\end{table}
 
-This layered analysis prevents misleading conclusions. A configuration might solve slightly
-fewer roots but produce cleaner trajectories with fewer unused subgoals. Such a configuration may be
-valuable for training-data generation. Conversely, a configuration might solve a theorem by exploring a
-large number of low-quality branches, making it less attractive if the goal is to create efficient search
-records. The experiments should therefore report both proof success and the structure of the path that led
-to success.
+\subsection{Trajectory Case Studies}
 
-When comparing ablations, the same theorem set, model, generation parameters, Lean version, timeout,
-and maximum search limits should be used. This keeps differences attributable to the disabled component
-rather than to sampling or environment changes. Because LLM sampling is stochastic, results should also
-record random seeds or run identifiers where possible. If multiple runs are too expensive, the thesis
-should still report enough metadata for the experiment to be reproduced.
+TODO: Select representative trajectories after the final run.
+
+Case 1: A theorem solved by local proof actions.
+TODO: show the theorem name, number of actions, final proof sketch, and why no skeleton was needed.
+
+Case 2: A theorem solved through skeleton decomposition.
+TODO: show the committed skeleton, child subgoals, child solutions, and final stitched proof.
+
+Case 3: A failed but informative trajectory.
+TODO: show where the search failed, what was recovered, and what labels/rewards were produced.
+
+\subsection{Discussion}
+
+TODO: Discuss the main empirical findings after the runs finish.
+TODO: Compare proof success, search cost, recovery behavior, and decomposition quality.
+TODO: Identify the main bottleneck observed in the current implementation.
 
 \subsection{Reproducibility Considerations}
 
@@ -1506,20 +1531,5 @@ state increases decomposition diversity but risks spreading effort across incomp
 the Sorrifier more aggressive can recover more partial structure but may also blur the connection
 between the original generation and the recovered script. These tradeoffs are precisely why the
 experimental section records both proof success and search-process metrics.
-
-\section{Extra Implementation Questions}
-
-The following points should be resolved before submission:
-\begin{enumerate}[leftmargin=*]
-    \item What exact Lean code format represents a skeleton?
-    \item Are local proof actions rejected whenever they leave any subgoal?
-    \item How are parser, elaboration, and type errors localized differently?
-    \item What is the semantic unit counted by \(r_{env}\)?
-    \item How is dependency usage extracted from Lean?
-    \item Is an unresolved subgoal labeled as an open state not solved within the current search limits?
-    \item Is the search truly best-first with priority-queue selection?
-    \item What concrete training objective is used?
-    \item Does final solved proof strictly forbid \texttt{sorry}? The answer should remain yes.
-\end{enumerate}
 
 \end{document}
