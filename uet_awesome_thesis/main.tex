@@ -1,18 +1,24 @@
 %!TEX TS-program = xelatex
 \documentclass[en]{uet-awesome-thesis} % use [vi] for vietnamese
 
-\usepackage{blindtext}
+\usepackage{amsthm}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage{dsfont}
 
-\title{This is title of the thesis}
-\author{Trần Thế Phong}
-\major{Công Nghệ Thông Tin}
-\advisor{Prof. Lê Thanh Hà}
+\title{Asymmetric Hierarchical Search with Dense Reward Optimization for Neural Theorem Proving}
+\author{Nguyen Duc Huy}
+\major{Artificial Intelligence}
+\advisor{Assoc. Prof. Nguyen Phuong Thai}
+\coadvisor{Prof. Hoang Le Truong}
 \university{University of Engineering and Technology}
 \universitycity{Hanoi}
-\degreeyear{2022}
+\degreeyear{2026}
 
-\input{frontmatter/glossaries}
-\makeglossaries 
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+\newtheorem{assumption}{Assumption}
 
 \begin{document}
 
@@ -30,16 +36,18 @@
 \addcontentsline{toc}{chapter}{List of Tables}
 \listoftables
 
-\glsaddall
-\printglossary[type=\acronymtype,title=List of Acronyms, toctitle=List of Acronyms]
-\printglossary[type=notation,title=List of Notations, toctitle=List of Notations,nonumberlist]
-
 \newpage
 \pagenumbering{arabic}
 
 \input{chapters/chapter1}
 \input{chapters/chapter2}
 \input{chapters/chapter3}
+\input{chapters/chapter4}
+\input{chapters/chapter5}
+\input{chapters/chapter6}
+\input{chapters/chapter7}
+\input{chapters/chapter8}
+\input{chapters/chapter9}
 
 \singlespacing
 
@@ -48,9 +56,15 @@
 \addcontentsline{toc}{chapter}{References}
 \bibliographystyle{plainnat}
 
+\titleformat{\chapter}[display]
+  {\Large\bfseries\raggedright}
+  {\chaptertitlename\ \thechapter}{12pt}{\Large\bfseries\raggedright}
+\titlespacing*{\chapter}{0pt}{0pt}{24pt}
+
 \begin{appendices}
 \input{chapters/appendixA}
 \input{chapters/appendixB}
+\input{chapters/appendixC}
 \end{appendices}
 
 \end{document}

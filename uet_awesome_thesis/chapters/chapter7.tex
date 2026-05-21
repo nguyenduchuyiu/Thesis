@@ -1,0 +1,228 @@
+\chapter{Proposed Framework}
+\label{sec:framework}
+
+\section{System Components}
+
+GammaZero is organized around four interacting components:
+\begin{itemize}
+    \item \textbf{Model interface:} asks the LLM for local proof actions or skeleton actions under separate output requirements.
+    \item \textbf{Lean verification interface:} checks generated candidates, reports diagnostics, returns placeholder states, and rejects candidates that violate the action requirement.
+    \item \textbf{Sorrifier:} repairs invalid candidates with \texttt{sorry} only for partial reward estimation.
+    \item \textbf{Search and reward evaluator:} maintains the AND/OR graph, selects open states using a priority queue, computes rewards, and exports scored trajectories.
+\end{itemize}
+
+These components implement the formulation from Section~\ref{sec:problem-formulation}. The model proposes candidate proof code, Lean checks it, the graph records the resulting state changes, and the reward evaluator stores both successful and failed attempts for later analysis.
+
+\section{Scaffold Rule in the Implementation}
+
+The scaffold rule from Section~\ref{sec:problem-formulation} is enforced at the level of candidate extraction. When a skeleton creates child subgoals, each child is checked inside a scaffold derived from the parent proof. The focused child is represented by the target \texttt{sorry}, while sibling children are represented by temporary \texttt{admit} placeholders.
+
+The model may see the surrounding scaffold, but the accepted action is only the replacement for the target hole. If the returned code changes a sibling \texttt{admit}, removes surrounding declarations, or modifies the parent assembly, the action is rejected or recorded as an extraction failure. The local rule is:
+\begin{quote}
+solve exactly this \texttt{sorry}; keep every \texttt{admit} unchanged.
+\end{quote}
+
+Each state with a scaffold records the scaffold hash, target kind, target index, and, when available, the target label inferred from the declaration that contains the target. If the target placeholder appears in \texttt{have h\_step : P := by sorry}, the target label is \texttt{h\_step}. These fields are part of state identity, so two equal-looking goals are not conflated when they occupy different scaffold positions.
+
+This representation is also used for nested skeletons. A local proof action must replace only the target placeholder and must not modify sibling \texttt{admit} placeholders. A child skeleton may introduce further child subgoals, but the extracted replacement is still checked against the original scaffold before it is accepted.
+
+Target labels and target indices make this check stable. A label helps humans read the log; the index helps the system identify the exact placeholder when several similar declarations appear in a single proof body. Together they make the extracted action robust to superficial formatting changes.
+
+\section{Model Interface and Output Parsing}
+
+The model is used as a fixed proposal mechanism. For local proof requests, the prompt asks for Lean proof code that closes the current target and forbids \texttt{sorry} and \texttt{admit}. For skeleton requests, the prompt asks for a proof outline with child subgoals. \texttt{admit} is forbidden, and \texttt{sorry} is allowed only for those child subgoals, for example:
+\begin{verbatim}
+have h_step : P := by
+  sorry
+\end{verbatim}
+
+The prompt may include optional natural-language reasoning, but only the Lean code block is passed to Lean. The parser extracts the first valid Lean code block, stops at the configured generation limit, and applies action-specific checks before verification. For subgoal scaffolds, the parser compares the returned full scaffold with the expected scaffold and extracts only the replacement for the target \texttt{sorry}.
+
+\section{Lean Feedback and Critique-Correction Loop}
+\label{subsec:lean-feedback}
+
+GammaZero does not treat every failed generation as an isolated sample. When Lean rejects a local proof
+action or skeleton action, the system records the failed candidate together with the Lean diagnostics
+reported for that check. If the same proof state receives another model attempt, the prompt builder can
+include a short history of recent failures for that state. The next request therefore contains not only the
+goal and scaffold, but also evidence about what has already failed.
+
+This feedback loop is used as a retry mechanism, not as a proof rule. The model is asked to produce a
+new action for the same target while avoiding the failed attempt. Lean diagnostics such as unknown
+identifiers, type mismatches, unsolved goals, and failed tactic applications help focus the retry on the
+actual reason the previous candidate was rejected. For skeleton actions, the same idea applies at the
+outline level: a rejected skeleton can be followed by another skeleton request that sees the previous
+failed outline and Lean's response.
+
+To keep the prompt bounded, GammaZero uses a sliding window over failed attempts rather than storing
+the full history of a state. In the implementation, only the three most recent failure records are included
+in the retry context. This keeps the model focused on recent compiler feedback and prevents old
+mistakes from dominating the context window. The search graph still records the full action history for
+analysis, but the model prompt receives only the bounded feedback window.
+
+The loop is therefore a compiler-feedback mechanism inside search. It can help the model correct local
+mistakes across retries, but it does not weaken the verification requirement. A corrected candidate must
+still be inserted into the scaffold and checked by Lean before it can solve a state or create valid child
+proof states.
+
+\section{Lean Verification Interface}
+
+Candidates are executed by persistent Lean workers. The returned result includes diagnostics, warnings, placeholder locations, generated proof states, and enough source-position metadata for repair and subgoal extraction. A local proof action succeeds only if Lean closes the current state with no real \texttt{sorry} or \texttt{admit}. A skeleton is accepted as a candidate when it passes the skeleton format checks and either closes the current target directly or exposes valid child proof states.
+
+Verification is iterative at the action level. For each generated candidate, GammaZero first materializes the candidate inside the current scaffold: a local proof action is inserted as the replacement for the target \texttt{sorry}, while a skeleton is inserted as the parent proof body with child holes temporarily represented by \texttt{sorry}. Lean then checks the resulting scaffold, not only the isolated fragment returned by the model. If the candidate is rejected or can only be used for syntactic reward, the search samples or repairs another candidate and repeats this materialize-and-check loop until it finds an accepted action or reaches the configured action and verification limits.
+
+Failed candidates may be sent to the Sorrifier for syntactic reward estimation. Repair does not turn a failed local proof action into a solved state, and it does not turn a placeholder-containing skeleton into a final proof. System failures, worker crashes, and timeouts are recorded as failed actions with metadata, not repaired as proof fragments.
+
+\section{Lean Metaprogramming Servers}
+
+Lean verification is the main computational cost in GammaZero. The implementation therefore avoids
+starting a fresh Lean process for every small query. Instead, it uses persistent Lean-side services built
+with Lean metaprogramming. These services expose the information needed by search while reusing the
+same loaded environment, imports, and worker state across many candidate checks.
+
+The AST server is used for syntax-level operations. Given generated proof code and a diagnostic span, it
+returns the surrounding syntax nodes and source ranges needed by the Sorrifier. This makes repair
+structural: the system can patch a tactic, expression, or proof block instead of guessing from raw text.
+Because the syntax tree is produced by Lean's own parser, the search does not need to repeatedly
+reconstruct approximate parse information outside Lean.
+
+The expression server is used after elaboration. It exports selected Lean expressions, including proof
+bodies and local declarations, into a JSON form that the dependency analyzer can traverse. This supports
+the \(r_{dep}\) reward without asking Lean to re-elaborate the same proof many times for each dependency
+question. The server also keeps the boundary clear: Lean produces authoritative elaborated expressions,
+while the external analyzer only reads those expressions and computes usage information.
+
+Together, the persistent workers, AST server, and expression server are resource optimizations, not new
+logical rules. They reduce process startup cost, repeated imports, duplicated parsing, and repeated
+elaboration work. Correctness still comes from ordinary Lean verification of the materialized scaffold
+and, at the end, the reconstructed theorem without placeholders.
+
+\section{Priority-Queue Search}
+
+GammaZero performs best-first selection using a priority queue over open proof states. A run has explicit resource limits, including a maximum number of generated actions, maximum depth, maximum local proof attempts per state, maximum skeleton attempts per state, a global open-state limit, per-depth open-state limits, Lean timeouts, and model generation limits.
+
+\noindent\textbf{Algorithm 1: Priority-Queue Hierarchical Search}
+\begin{enumerate}[leftmargin=*]
+    \item Initialize the root OR node from the theorem scaffold and insert it into the priority queue.
+    \item Pop a high-priority open state.
+    \item Try local proof candidates first, subject to the per-state and global action limits.
+    \item Verify or repair candidates, record rewards, and mark the state solved if a local proof action closes it without placeholders.
+    \item If local proof attempts are insufficient or unsuccessful, decide whether the state should request skeletons.
+    \item Generate, verify, repair, and score skeleton candidates.
+    \item Commit at most one active skeleton for the parent state; store other promising skeletons as reserved skeletons.
+    \item Insert child states of the active skeleton into the priority queue.
+    \item Prune low-priority open states when global or per-depth queue limits are exceeded.
+    \item Stop when the root is solved or the generated-action, depth, open-state, timeout, or verification-call limits are reached.
+    \item Run dependency analysis, final stitching, and bottom-up AND/OR reward backup.
+\end{enumerate}
+
+Micro-batching is used only as an execution schedule for model calls and Lean verification. It does not define the logical order of expansion. The logical search order is determined by priority scores over open states.
+
+\section{Local-Proof-First Expansion}
+
+The search does not request skeletons immediately for every state. For a new state, GammaZero first samples local proof actions because many Lean goals can be closed inside the current scaffold and should not be decomposed. A skeleton request is made only after local proof attempts fail to solve the state, after the state has used enough local attempts, or after priority signals indicate that decomposition may be useful.
+
+The rule is adaptive. If failed local proof attempts have high \(r_{env}\), the system may continue local proof sampling longer because the model is producing Lean code with high syntactic reward. If local proof attempts have low syntactic reward or repeatedly leave the same state open, the state becomes eligible for skeleton generation earlier.
+
+\section{Skeleton Commitment and Fallback}
+
+Several skeletons can be generated for the same proof state, but they may organize the proof around different proof structures. Solving children from one skeleton does not necessarily help complete another skeleton. GammaZero therefore commits to one active skeleton per parent state, while keeping other promising skeletons as reserves. The committed skeleton receives focused search effort: its children enter the priority queue, and the parent does not keep requesting unrelated skeletons while that skeleton remains active.
+
+Other promising skeletons are stored as reserved skeletons. If the committed skeleton fails, reaches its search limits without progress, or becomes stale after repeated rounds, a reserved skeleton can be activated. Duplicate skeletons are rejected before reservation when they expose the same scaffold structure and equivalent child subgoals. This keeps search effort concentrated without making the first skeleton choice irreversible.
+
+\section{Priority Scores}
+
+The priority scores are heuristics for allocating limited search effort. They are not intended to measure mathematical truth or proof elegance. Their role is to decide which open state should receive the next model and Lean calls. The score estimates search promise, not theorem truth.
+
+The state priority score combines signals that estimate whether expanding a state is likely to finish an active proof:
+\[
+\begin{aligned}
+\mathrm{score}(s) =
+&\; \alpha_{\mathrm{in}} \mathrm{score}_{\mathrm{incoming}}(s)
++ \alpha_{\mathrm{proof}} r_{\mathrm{proof}}^{\mathrm{best}}(s)
++ \alpha_{\mathrm{prog}} \mathrm{bonus}_{\mathrm{committed}}(s) \\
+&- \alpha_{\mathrm{depth}} \mathrm{depth}(s)
+- \alpha_{\mathrm{retry}} \mathrm{tacticTries}(s)
+- \alpha_{\mathrm{skel}} \mathrm{skeletonTries}(s)
+- \alpha_{\mathrm{bad}} \mathrm{badSkeletonRounds}(s).
+\end{aligned}
+\]
+Incoming skeleton score transfers priority from a promising decomposition to its children. The term \(r_{\mathrm{proof}}^{\mathrm{best}}(s)\) is the best syntactic reward obtained by a local proof candidate tried on state \(s\). The committed-skeleton progress bonus favors children of the active skeleton, especially the last open child. Depth and retry penalties reduce priority for states that are deep, repeatedly attempted, or attached to skeletons with little progress.
+
+Skeletons are scored before commitment or reservation:
+\[
+\mathrm{score}(a_{\mathrm{skel}}) =
+\beta_{\mathrm{env}} r_{env}
++ \beta_{\mathrm{parent}} \mathrm{score}_{\mathrm{parent}}
++ g(n_{\mathrm{children}})
+- \beta_{\mathrm{depth}} \mathrm{depth(parent)}
+- \beta_{\mathrm{repair}} \mathds{1}_{\mathrm{repaired}}.
+\]
+This score prefers skeletons that are clean, have high syntactic reward, and are proposed from promising parent states. The term \(g(n_{\mathrm{children}})\) scores the number of child subgoals, penalizing decompositions that create too many branches and giving less value to skeletons that do not expose useful children. A repaired skeleton can still be useful, but a clean skeleton is preferred when other signals are similar.
+
+In practice, the score must interact with the search budget. A skeleton that is only slightly worse than
+the best one may still be worth reserving if the parent state is important and the remaining queue is small.
+Conversely, a very poor skeleton should not remain in the queue just because it is technically valid. The
+scoring policy is therefore not a universal ranking of mathematical quality; it is a local decision rule for
+allocating limited verification effort.
+
+The formula is intentionally heuristic rather than normative. Its purpose is to prefer states that are
+close to completing the currently committed proof structure, not necessarily states that are globally
+shortest or most elegant. A deep state with one nearly solved child may outrank a shallow state with no
+clear proof direction if the committed skeleton is near completion. Conversely, a deep state with repeated
+failed local proof attempts and stale skeletons should drift downward in the queue even if it has not yet exceeded its
+hard search limits. This is the practical difference between best-first search and a depth-ordered rollout:
+the former tries to spend effort where it is most likely to close something useful, while the latter merely
+walks level by level.
+
+Queue pruning is equally important. A proof search graph can accumulate many open states that are no
+longer promising because they are dominated by a better sibling, belong to a stale skeleton, or have
+already consumed too many attempts. If the queue grows without pruning, the system wastes verification
+time on states that are unlikely to contribute to the final proof. GammaZero therefore treats pruning as
+part of the search policy, not as an afterthought. The pruning count is one of the recorded metrics
+because it measures how aggressively the search focused on promising open states.
+
+Skeleton scoring plays a similar role at the decomposition level. A skeleton that creates a compact parent proof with high syntactic reward may be activated immediately, while a skeleton that repeatedly repairs into a
+fragile structure may remain reserved or be discarded. The score does not claim to predict theorem
+truth; it only predicts whether the candidate is likely to be useful inside the current proof graph. This
+separation between utility and truth is what allows GammaZero to keep using partially successful actions
+as data even when the final theorem is not solved.
+
+\section{Final Proof Construction}
+
+When child states are solved, their proof bodies are stitched into the corresponding child subgoals in the parent skeleton. This process propagates upward: solved children close a skeleton, a solved skeleton closes its parent state, and the root theorem is reconstructed from the selected action chain.
+
+After stitching, dependency analysis may identify declarations that are solved but unused by the final proof expression. Such unused declarations may be removed, and Lean is asked to verify the cleaned theorem again. The accepted final proof must contain no real \texttt{sorry} or \texttt{admit}; placeholder-compilable scripts are retained only as scored training records.
+
+This final verification step deserves emphasis because it closes the loop between search and proof
+correctness. The search graph may contain many branches, repaired candidates, reserved skeletons, and
+unused declarations. None of those artifacts should leak into the accepted theorem. The
+final checker therefore acts on the reconstructed proof body, not on an abstract summary of the search.
+If the cleaned proof no longer verifies, the theorem is not considered solved. In other words, the search
+record may be richer than the final proof, but the final proof remains the only object that matters for
+correctness.
+
+\section{End-to-End Lifecycle}
+
+With the implementation pieces in place, the full run can be summarized as follows. GammaZero starts
+from a theorem whose proof body contains one root placeholder. Lean returns the initial proof state, and
+the state is inserted into the priority queue. The search then selects an open state, serializes its scaffold,
+local context, and target goal, and asks the model for local proof attempts.
+
+Each candidate is stitched into the current scaffold and checked by Lean. If a local proof action closes
+the target without placeholders, the state becomes solved and the solution can propagate upward. If local
+proof attempts fail but still receive high syntactic scores, the state may receive more local proof
+attempts. If local closure appears unlikely, the state becomes eligible for skeleton generation.
+
+For a skeleton, the parent proof body is checked with temporary child holes. If Lean accepts the
+structure, GammaZero extracts each child hole as a new proof state with its own scaffold. The best
+skeleton for the parent is committed, its child states are inserted into the priority queue, and other
+promising skeletons may be kept as reserves. Search then continues from the highest-priority open child,
+which may itself be solved locally or decomposed by another skeleton.
+
+When a child is solved, its proof body is inserted into the corresponding hole of its parent skeleton. If
+all children of a committed skeleton are solved, the skeleton closes its parent state. This propagation can
+continue until the root theorem is solved. The final theorem is reconstructed from the selected solved
+actions, optionally cleaned by dependency analysis, and verified again by Lean. The exported search
+record may contain failed actions, repaired candidates, reserved skeletons, and pruned states, but the
+final proof contains only the selected verified path.

@@ -1,18 +1,18 @@
 # Fdb version 4
-["bibtex main"] 1779388200.18404 "main.aux" "main.bbl" "main" 1779388203.8365 0
-  "./sample.bib" 1779298029.34626 7894 23100bd63e9d61a379f95aa64b04f91b ""
+["bibtex main"] 1779389672.5053 "main.aux" "main.bbl" "main" 1779389813.25963 0
+  "./refs.bib" 1779388446.83873 7894 23100bd63e9d61a379f95aa64b04f91b ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/natbib/plainnat.bst" 1233624470 26816 ffe5423d2019860bad9f54bc402fac15 ""
-  "main.aux" 1779388203.03842 17812 b0f04fd97f69aba1227e850a0f8086d8 "xelatex"
+  "main.aux" 1779389812.48249 17863 8547933fcdcdc8320406e166432f9d78 "xelatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["xdvipdfmx"] 1779388203.34978 "main.xdv" "main.pdf" "main" 1779388203.83956 0
-  "main.xdv" 1779388203.04042 1386184 ae48dff226bca28c6aa20029c2206cfa "xelatex"
+["xdvipdfmx"] 1779389812.81108 "main.xdv" "main.pdf" "main" 1779389813.26208 0
+  "main.xdv" 1779389812.48549 1416196 11a89cf8896c092b74033657f931cc2d "xelatex"
   (generated)
   "main.pdf"
   (rewritten before read)
-["xelatex"] 1779388200.29932 "main.tex" "main.xdv" "main" 1779388203.83659 0
+["xelatex"] 1779389809.67347 "main.tex" "main.xdv" "main" 1779389813.25972 0
   "/etc/texmf/web2c/texmf.cnf" 1746465146.33072 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/adobe/zapfding/pzdr.tfm" 1136768653 1528 f853c4d1b4e0550255e02831fdc8496f ""
@@ -269,15 +269,30 @@
   "/usr/share/texlive/texmf-dist/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/web2c/xetex/xelatex.fmt" 1746465280 10845486 19be859d47d8fd829e88435101a15471 ""
-  "main.aux" 1779388203.03842 17812 b0f04fd97f69aba1227e850a0f8086d8 "xelatex"
-  "main.bbl" 1779388200.29243 6513 f0ebb07cb13c3cb8c2f7cb72622a3976 "bibtex main"
-  "main.lof" 1779388203.04042 270 634014215239961ef22015ac6f9b33c9 "xelatex"
-  "main.lot" 1779388203.04042 1001 3f9eca195bf7af7b2e55ca3da4e2cc41 "xelatex"
-  "main.out" 1779388203.04042 12229 460683432b373714d8690ab43b920bd0 "xelatex"
-  "main.tex" 1779388192.11147 130737 7b2f89e147ad0817f2f453d38cc12239 ""
-  "main.toc" 1779388203.04042 7191 6d979121c232c2c64243c604be40adcf "xelatex"
-  "uet_awesome_thesis/UET_logo.png" 1779353740 98603 92e8cd148de7740188856ea0af087f9b ""
-  "uet_awesome_thesis/uet-awesome-thesis.cls" 1779353740 10736 6f4e191eb43854a8f21a7ae93277702e ""
+  "UET_logo.png" 1779353740 98603 92e8cd148de7740188856ea0af087f9b ""
+  "chapters/appendixA.tex" 1779388446.83373 6316 d67aa362d0130842b307cb0e067cd9af ""
+  "chapters/appendixB.tex" 1779388446.83373 3653 7fbda67bea15e214be75f916c0fd434e ""
+  "chapters/appendixC.tex" 1779388446.83373 2937 01669e8fad19cc023b699f4793cbb516 ""
+  "chapters/chapter1.tex" 1779388446.83373 8700 ba58ff3cb9249fe76aab6f0f3f362919 ""
+  "chapters/chapter2.tex" 1779388446.83373 6600 0fd0c6eac04fcd325f372be79a5f0dcc ""
+  "chapters/chapter3.tex" 1779388446.83373 16774 d950719f36a4133ff30a720a417354d1 ""
+  "chapters/chapter4.tex" 1779388446.83373 14319 743f7ad18b2ed92978aed1e21969edfd ""
+  "chapters/chapter5.tex" 1779388446.83373 11249 1d8a38e612ce728b15631fe89c3d3629 ""
+  "chapters/chapter6.tex" 1779388446.83373 10994 77435b01036357580acc4fbbcd5f7e41 ""
+  "chapters/chapter7.tex" 1779388446.83373 20496 d8a0ab741753a1bcd52aacd3d5f92c59 ""
+  "chapters/chapter8.tex" 1779388446.83373 21079 cde79c84532e2bf57b3c3723048fc904 ""
+  "chapters/chapter9.tex" 1779388446.83373 5610 60b9a53cbbddbb5ad2941a36f4dd5f54 ""
+  "frontmatter/abstract.tex" 1779388446.83373 927 1f214bca6eace10e0bcc98d0bcdefe53 ""
+  "frontmatter/coverpage.tex" 1779353740 126 6b49fe02b3045949a9429ee4dbdcca02 ""
+  "frontmatter/thanks.tex" 1779389806.60058 1178 ddc647736e9462cc10b06ae3421ad547 ""
+  "main.aux" 1779389812.48249 17863 8547933fcdcdc8320406e166432f9d78 "xelatex"
+  "main.bbl" 1779389672.60162 6513 f0ebb07cb13c3cb8c2f7cb72622a3976 "bibtex main"
+  "main.lof" 1779389812.48449 270 634014215239961ef22015ac6f9b33c9 "xelatex"
+  "main.lot" 1779389812.48449 1001 f6bc44418edfc1b7f6e646444c90205b "xelatex"
+  "main.out" 1779389812.48449 12232 5c5ea3a6bc60c5243a583ea02e687e59 "xelatex"
+  "main.tex" 1779389586.44792 1644 0ea46c2683b42ff0c04364183b10dc16 ""
+  "main.toc" 1779389812.48449 7199 a1b8218bbdfdab5f61bb8f6f78c75307 "xelatex"
+  "uet-awesome-thesis.cls" 1779389719.7689 10999 5f7cecad71e7f61bba3b4e2849e2f034 ""
   (generated)
   "main.aux"
   "main.lof"

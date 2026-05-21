@@ -1,18 +1,3 @@
 \abstractpage{
-\blindtext
-
-\blindtext
-
-% It is suggested to have the abstract in both language (Vietnamese and English).
-\newpage
-\begin{center}
-    \vspace*{1pt}
-\Large \textcolor{Crimson}{\textit{This is title of the thesis in Vietnamese}} \normalsize\\
-\vspace*{15pt}
-	{\bf Tóm tắt đồ án} \rm
-\end{center}
-
-\blindtext
-
-\blindtext
+Formal theorem proving in Lean 4 requires exact syntax, exact types, and long-horizon logical planning. This thesis proposes GammaZero, a Lean proof-search and reward-data generation framework that turns LLM samples into verified graph structure. The system separates local proof actions from skeleton actions, verifies every candidate with Lean, repairs invalid generations only for dense feedback, and performs best-first selection over open proof states using a priority queue. Skeletons decompose a proof into child subgoals that are solved in their parent theorem scaffold, with one active skeleton per parent state and reserved skeletons for fallback. Dependency-aware expression-tree analysis and AND/OR backup produce RL-compatible scored trajectories for future policy optimization. Final success always requires Lean verification of a proof with no real \texttt{sorry} or \texttt{admit} placeholder.
 }

@@ -1,0 +1,83 @@
+\chapter{Sorrifier Examples and Case Studies}
+\label{app:sorrifier-examples}
+
+This subsection illustrates how the Sorrifier converts different Lean failures into
+placeholder-compilable scripts and how the line-based syntactic reward is computed. In all examples,
+blank lines and comments are excluded from the line count.
+
+\paragraph{Case 1: Parser error.}
+Consider a generated proof body containing a malformed tactic:
+\begin{verbatim}
+have h := 1
+apply h (
+\end{verbatim}
+Lean reports a parser error because the opening parenthesis is not closed. The Sorrifier localizes
+the failing tactic line and replaces it with \texttt{sorry}:
+\begin{verbatim}
+have h := 1
+sorry
+\end{verbatim}
+The original body contains two clean lines. One line survives unchanged, while the malformed tactic is
+replaced. Therefore, the syntactic reward is:
+\[
+r_{\text{env}} = \frac{1}{2} = 0.5.
+\]
+
+\paragraph{Case 2: Unresolved name and cascade cleanup.}
+Consider a generated proof body that calls a nonexistent lemma:
+\begin{verbatim}
+apply nonexistent_lemma
+rfl
+\end{verbatim}
+Lean reports an unknown identifier error for \texttt{nonexistent\_lemma}. After this failure, the following
+line is no longer useful in the recovered proof context. The Sorrifier therefore replaces the failed
+region with a single placeholder:
+\begin{verbatim}
+sorry
+\end{verbatim}
+Although the original body has two clean lines, neither line survives unchanged in the patched body.
+Thus:
+\[
+r_{\text{env}} = \frac{0}{2} = 0.0.
+\]
+This example shows that recovery is not purely local at the textual level: an early failure may invalidate
+later commands that depend on the proof state created by the failed command.
+
+\paragraph{Case 3: Skeleton partial recovery.}
+The following skeleton introduces a valid proof step before producing an invalid tactic:
+\begin{verbatim}
+have h : 1 + 1 = 2 := by
+  rfl
+apply nonexistent_lemma
+exact h
+\end{verbatim}
+The first two lines form a valid local proof step. The third line fails because the
+lemma name cannot be resolved, and the final line becomes unusable after the failed application. The
+patched body is:
+\begin{verbatim}
+have h : 1 + 1 = 2 := by
+  rfl
+sorry
+\end{verbatim}
+The original body has four clean lines. The first two lines survive unchanged, while the remaining two
+lines are replaced by a placeholder. Therefore:
+\[
+r_{\text{env}} = \frac{2}{4} = 0.5.
+\]
+This case illustrates why recovery is useful for skeleton actions: even when the generated proof does not
+fully close the goal, valid setup lines and child subgoals can still be preserved and rewarded.
+
+\paragraph{Case 4: Type mismatch.}
+A minimal type mismatch example is:
+\begin{verbatim}
+exact 1
+\end{verbatim}
+when the expected target is a proposition. Lean rejects the term because a numeral does not inhabit the
+expected proposition. The recovered body is:
+\begin{verbatim}
+sorry
+\end{verbatim}
+No original clean line survives, giving:
+\[
+r_{\text{env}} = 0.0.
+\]

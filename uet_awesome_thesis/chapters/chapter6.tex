@@ -1,0 +1,190 @@
+\chapter{Dense Reward and Credit Assignment}
+\label{sec:reward}
+
+\section{Syntactic Reward}
+\label{subsec:syntactic-reward}
+
+For an action \(a\) generated at state \(s\), let \(L_{\text{orig}}(a)\) be the list of clean proof lines in
+the original generated action, excluding blank lines and comment-only lines. Let \(L_{\text{patch}}(a)\)
+be the clean proof lines after Sorrifier recovery. The system compares these two lists using sequence
+matching. A line is counted as surviving only if it appears unchanged and in the same relative order in
+the patched proof.
+
+Let \(N_{\text{orig}} = |L_{\text{orig}}(a)|\), and let \(N_{\text{surv}}\) be the number of surviving lines.
+After the patched script is checked by Lean, the system also counts how many surviving lines correspond
+to unused or ineffective code. We denote this number by \(N_{\text{dead}}\). These are lines that survived
+the recovery process but do not appear to contribute useful executable proof structure, for example
+because Lean reports that a declaration is unused or that a tactic has no effect. By definition,
+\(0 \leq N_{\text{dead}} \leq N_{\text{surv}}\).
+
+The syntactic reward is:
+\[
+r_{\mathrm{env}}(s,a) =
+\begin{cases}
+\dfrac{N_{\text{surv}} - N_{\text{dead}}}{N_{\text{orig}}},
+& N_{\text{orig}} > 0, \\
+0, & N_{\text{orig}} = 0.
+\end{cases}
+\]
+
+This reward measures how much of the generated Lean code remains usable after recovery. Lines removed
+or replaced by placeholders do not receive credit. Surviving lines that are later identified as unused or
+ineffective are also discounted. Therefore, \(r_{\mathrm{env}}\) is a syntactic validity signal, not a proof
+correctness signal. A high value means that much of the generated code survived Lean checking after patching; 
+it does not mean that the action solves the proof state.
+
+\section{Dependency-aware Structural Reward}
+\label{subsec:dep-reward}
+
+Syntactic validity alone is not enough to judge the quality of a generated action. Both skeleton actions
+and local proof actions may introduce local declarations through constructs such as \texttt{have} or
+\texttt{let}. In a skeleton action, these declarations often correspond to child subgoals that are solved by
+child search branches and stitched back into the parent scaffold. In a local proof action, they are proof
+steps inside a single generated proof body.
+
+In either case, the model may introduce declarations that compile but do not help the final proof. It may
+also leave declarations containing placeholders, which makes the resulting proof incomplete. To estimate
+whether generated declarations actually contribute to the proof that was found, GammaZero performs
+dependency analysis over the elaborated Lean proof expression.
+
+This signal is more semantic than the syntactic reward in Section~\ref{subsec:syntactic-reward}: it is computed
+from Lean's elaborated expression tree rather than from surviving source lines. It therefore asks whether
+a declaration is used by the checked proof term, not merely whether the text around that declaration
+compiled. It is still not a theorem about mathematical necessity or proof minimality; it is an attribution
+signal for the concrete proof found by the search.
+
+A separate expression-dumping process exports the Lean 4 expression tree into JSON. The dependency
+analyzer traverses nodes such as \texttt{bvar}, \texttt{fvar}, \texttt{app}, \texttt{lam}, \texttt{forallE}, and
+\texttt{letE} to determine whether each generated declaration is referenced by the final proof expression.
+The traversal is De Bruijn-aware: when the analyzer enters a binder such as \texttt{lam}, \texttt{forallE},
+or \texttt{letE}, it shifts the target De Bruijn index so that bound-variable references are attributed to
+the correct declaration. The analyzer also detects \texttt{sorryAx} in the expression tree.
+
+Combining usage detection with placeholder detection gives four structural cases:
+\begin{itemize}
+    \item \textbf{Used and solved:} the declaration has a solved proof body and is used by the elaborated proof. This is the core useful case.
+    \item \textbf{Unresolved and used:} the declaration still contains a placeholder and is used by the proof, so the proof is incomplete.
+    \item \textbf{Solved but unused:} the declaration is complete but redundant for the selected proof.
+    \item \textbf{Unresolved and unused:} the declaration is unfinished and unused by the selected proof.
+\end{itemize}
+
+Let \(n_{\mathrm{used,solved}}\), \(n_{\mathrm{unused,solved}}\), and
+\(n_{\mathrm{unused,unresolved}}\) denote the numbers of used-and-solved, solved-but-unused, and
+unresolved-and-unused declarations. The general dependency
+reward is:
+\[
+r_{\mathrm{dep}}(s,a) =
+\frac{n_{\mathrm{used,solved}}}
+{n_{\mathrm{used,solved}}
+ + w_{\mathrm{unused,solved}} n_{\mathrm{unused,solved}}
+ + w_{\mathrm{unused,unresolved}} n_{\mathrm{unused,unresolved}}},
+\]
+where \(w_{\mathrm{unused,solved}} \ge 0\) penalizes solved but unused work and
+\(w_{\mathrm{unused,unresolved}} > w_{\mathrm{unused,solved}}\) penalizes unresolved unused work more
+strongly. If the denominator is zero and the action introduces no local declarations, the reward defaults
+to \(1.0\). Unresolved-and-used declarations are treated as
+structural failures because the final proof still depends on a placeholder-containing declaration.
+
+The formula is only a heuristic for ranking search actions. It favors used-and-solved declarations and penalizes unused or unfinished ones.
+The numerator counts declarations that are both used and solved. This conjunction is essential: a declaration is not useful for
+the final proof merely because it is solved, and it is not acceptable merely because it is used. It must be
+both. The denominator counts those declarations plus weighted
+forms of waste. A solved-but-unused declaration is mildly harmful because it consumes search effort but
+does not block final verification. An unresolved-and-unused declaration is worse because it leaves
+unfinished code in a placeholder-compilable script. The dependency score therefore helps distinguish
+compact useful structure from redundant or bloated proof scripts, while final correctness still depends
+only on Lean verification without placeholders.
+
+This analysis is tied to the proof that GammaZero actually found. If a declaration is unused in the
+selected stitched proof, that does not mean it is mathematically useless in every possible proof. It only
+means that this search trajectory did not need it.
+
+\section{AND/OR Backup}
+\label{subsec:and-or-backup}
+
+After search stops or the root is closed, GammaZero backs up values through the explored AND/OR graph.
+States are OR nodes: a state can be solved by choosing one successful outgoing action. Actions are AND
+nodes: a skeleton action succeeds only when all of its child proof states are solved.
+
+The implemented backup uses a single action-value rule for both local proof actions and skeleton
+actions. Solved actions are credited through the dependency reward and, for skeletons, through solved
+child values.
+
+For an action \(a\) applied to state \(s\), let \(\mathcal{C}(a)\) be the set of child states created by the
+action. For a local proof action, \(\mathcal{C}(a)=\emptyset\). We define the empty-child future value to
+be zero:
+\[
+\min_{s' \in \emptyset} V(s') = 0.
+\]
+The action value is:
+\[
+Q(s,a) =
+r_{\mathrm{env}}(s,a)
++
+r_{\mathrm{dep}}(s,a)
++
+\mathds{1}_{\mathrm{solved}}(s,a)\,
+\gamma
+\min_{s' \in \mathcal{C}(a)} V(s').
+\]
+
+Here, \(r_{\mathrm{env}}\) is the syntactic preservation reward from the Sorrifier, and
+\(r_{\mathrm{dep}}\) is the dependency reward from the elaborated proof expression. The indicator
+\(\mathds{1}_{\mathrm{solved}}(s,a)\) is \(1\) only when the action solves its required proof state. For a
+local proof action, this means the current target is closed without \texttt{sorry} or \texttt{admit}. For a
+skeleton action, this means every child state in \(\mathcal{C}(a)\) is solved.
+
+This rule has two useful special cases. For a local proof action, the child set is empty, so the future term
+drops out:
+\[
+Q(s,a)=r_{\mathrm{env}}(s,a)+r_{\mathrm{dep}}(s,a).
+\]
+For a skeleton action that is not fully solved, the solved indicator is zero, so the action keeps only its
+local credit. In practice, \(r_{\mathrm{dep}}\) is zero when the skeleton has not produced a solved
+dependency structure. When the skeleton is solved, it also receives the discounted value of its weakest
+child branch:
+\[
+Q(s,a)=
+r_{\mathrm{env}}(s,a)
++
+r_{\mathrm{dep}}(s,a)
++
+\gamma \min_{s' \in \mathcal{C}(a)} V(s').
+\]
+
+The \(\min\) operator implements the AND part of the graph: a decomposition is limited by its weakest
+child state. This prevents the backup from giving high delayed value to a skeleton that solves only easy
+subgoals while leaving an essential one open.
+
+For an OR node \(s\), the state value is the best available outgoing action:
+\[
+V(s)=\max_{a \in \mathcal{A}(s)} Q(s,a),
+\]
+where \(\mathcal{A}(s)\) is the set of actions expanded from \(s\). The graph therefore uses max backup
+over alternative actions and min backup over the conjunctive children of a skeleton action.
+
+\section{Reward Computation and Training Data Generation}
+
+The implemented system produces scored proof-search trajectories rather than an end-to-end optimized
+policy checkpoint. Each sampled action is executed, optionally recovered, inserted into the AND/OR graph,
+and assigned syntactic and delayed structural rewards according to the formulations above. The resulting records
+contain the serialized proof state, action type, generated Lean code, recovery result, child proof states,
+graph status, priority-queue metadata, skeleton commitment metadata, and final action value.
+
+These records can be used as training data for later policy optimization. Local proof actions and
+skeleton actions should be grouped separately because their value is observed through different graph
+structures: local proof actions have no child value term, whereas skeleton actions receive delayed child
+value only when all generated child subgoals are solved. Therefore, comparing local proof actions and
+skeleton actions in the same optimization group would mix different reward scales.
+
+\section{Trajectory Export and Final Verification}
+
+For a successful root theorem, GammaZero reconstructs the proof by recursively inserting solved child
+proof bodies into the child subgoals of the committed parent skeletons. Reserved skeletons and failed
+actions remain in the search record, but they are not part of the selected final proof. After insertion,
+dependency analysis may remove solved declarations that are unused by the elaborated proof expression.
+The resulting theorem is submitted to Lean again. The theorem is accepted as solved only if this final
+verification succeeds without real \texttt{sorry} or \texttt{admit}.
+
+The same trajectory records can later support policy optimization, but this thesis stops at verified
+search, reward computation, and data export.

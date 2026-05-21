@@ -1,0 +1,16 @@
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {8.5.1}{\ignorespaces Comparative evaluation of the root-only local proof baseline against GammaZero. Search gain is the absolute improvement in solve rate from enabling skeleton expansion and deeper graph search.}}{42}{table.caption.5}%
+\contentsline {table}{\numberline {8.5.2}{\ignorespaces Search cost and repair summary. Actions and Lean calls are averages per theorem; token counts are totals for each split.}}{42}{table.caption.6}%
+\contentsline {table}{\numberline {8.7.1}{\ignorespaces Decomposition and dependency-class metrics on the miniF2F-valid and miniF2F-test rollout logs. Skeleton counts are reported as total / average added to the search graph per run.}}{43}{table.caption.7}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }

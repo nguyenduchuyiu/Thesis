@@ -129,6 +129,7 @@
 \def\degreeyear#1{\gdef\@degreeyear{#1}}
 \def\degreemonth#1{\gdef\@degreemonth{#1}}
 \def\advisor#1{\gdef\@advisor{#1}}
+\def\coadvisor#1{\gdef\@coadvisor{#1}}
 \def\university#1{\gdef\@university{#1}}
 \def\universitycity#1{\gdef\@universitycity{#1}}
 \def\major#1{\gdef\@major{#1}}
@@ -168,7 +169,7 @@
     \begin{large}\fontsize{12pt}{1}\selectfont \textbf{\MakeUppercase{\@university}} \end{large} \\[1cm]
     {\includegraphics[scale=0.07]{UET_logo.png} \\ [1cm]}
     {\fontsize{14pt}{1}\selectfont \textbf{\@author}}\\[2cm]
-    {\fontsize{18pt}{1}\selectfont \textbf{\MakeUppercase{\@title}}}\\[4cm]
+    {\parbox{0.82\textwidth}{\centering\fontsize{18pt}{22pt}\selectfont \textbf{\MakeUppercase{\@title}}}}\\[4cm]
     
     {\fontsize{15pt}{1}\selectfont \textbf{\isenglish{BACHELOR THESIS}{KHÓA LUẬN TỐT NGHIỆP ĐẠI HỌC HỆ CHÍNH QUY}}}\\[0.3cm]
     {\fontsize{15pt}{1}\selectfont \textbf{\isenglish{Major}{Ngành}: \@major}}\\[3.5cm]
@@ -198,15 +199,21 @@
 	\begin{center}
     \begin{large}\fontsize{12pt}{1}\selectfont \textbf{\MakeUppercase{\@university}} \end{large} \\[2cm]
     {\fontsize{14pt}{1}\selectfont \textbf{\@author}}\\[2.5cm]
-    {\fontsize{18pt}{1}\selectfont \textbf{\MakeUppercase{\@title}}}\\[4cm]
+    {\parbox{0.82\textwidth}{\centering\fontsize{18pt}{22pt}\selectfont \textbf{\MakeUppercase{\@title}}}}\\[4cm]
     
     {\fontsize{15pt}{1}\selectfont \textbf{\isenglish{BACHELOR THESIS}{KHÓA LUẬN TỐT NGHIỆP ĐẠI HỌC HỆ CHÍNH QUY}}}\\[0.3cm]
     {\fontsize{15pt}{1}\selectfont \textbf{\isenglish{Major}{Ngành}: \@major}}\\[3cm]
 	
 	\end{center} 
     
-    {\noindent \fontsize{14pt}{1}\selectfont \textbf{\isenglish{Supervisor:}{Cán bộ hướng dẫn:}}}\\[3cm]
-    {\fontsize{14pt}{1}\selectfont \textbf{\isenglish{Co-supervisor:}{Cán bộ đồng hướng dẫn:}}}\\[0.3cm]
+    \noindent
+    \begin{minipage}{0.82\textwidth}
+    {\fontsize{14pt}{18pt}\selectfont
+    \begin{tabular}{@{}l@{\hspace{0.35cm}}l@{}}
+    \textbf{\isenglish{Supervisor:}{Cán bộ hướng dẫn:}} & \textbf{\@advisor} \\[0.45cm]
+    \textbf{\isenglish{Co-supervisor:}{Cán bộ đồng hướng dẫn:}} & \textbf{\@coadvisor}
+    \end{tabular}}
+    \end{minipage}
     
     \vspace*{\fill}
     
@@ -286,7 +293,7 @@
 \newcommand{\approval}{
     \isenglish{\chapter*{Supervisor's approval}}{\chapter*{Xác nhận của cán bộ hướng dẫn}}
     \pagestyle{fancy}
-	\noindent “I hereby approve that the thesis in its current form is ready for committee examination as a requirement for the Bachelor of Computer Science degree at the University of Engineering and Technology.” \\ [2cm]
+	\noindent “I hereby approve that the thesis in its current form is ready for committee examination as a requirement for the Bachelor of Artificial Intelligence degree at the University of Engineering and Technology.” \\ [2cm]
 
     \noindent Signature:………………………………………………
 	\vspace*{\fill} 

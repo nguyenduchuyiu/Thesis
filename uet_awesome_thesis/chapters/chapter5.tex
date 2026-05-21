@@ -1,0 +1,156 @@
+\chapter{AST-Guided Sorrifier}
+\label{sec:Sorrifier}
+
+\section{Motivation}
+
+Lean failures are often local. A generated proof may contain a valid prefix and one broken command, but normal binary verification rejects the whole script. The Sorrifier recovers partial signal by replacing localized failing regions with \texttt{sorry}.
+
+We distinguish two notions:
+\begin{itemize}
+    \item \textbf{Placeholder-compilable script:} Lean accepts the script only because unresolved or invalid regions were replaced with \texttt{sorry}.
+    \item \textbf{Fully verified proof:} Lean accepts the script with no \texttt{sorry} placeholder.
+\end{itemize}
+The Sorrifier is used only for reward estimation and partial-credit extraction. A theorem is considered solved only when Lean accepts the proof without any \texttt{sorry}.
+
+\section{Failure Taxonomy}
+
+Generated Lean failures are categorized conceptually as follows:
+\begin{itemize}
+    \item \textbf{Parser errors:} malformed syntax, such as missing brackets, invalid tactic syntax, or broken proof blocks.
+    \item \textbf{Elaboration errors:} unresolved names, missing implicit arguments, or expressions that Lean cannot elaborate.
+    \item \textbf{Type errors:} syntactically valid terms whose inferred types do not match the expected goal.
+    \item \textbf{Unsolved goals:} valid proof fragments that execute but leave remaining subgoals.
+\end{itemize}
+
+This taxonomy is used to explain the main failure modes observed in generated Lean code. The current
+implementation does not rely on a complete classifier that formally separates parser, elaboration, and
+type-checking failures. Instead, candidate actions are executed through a persistent Lean worker, while
+an AST daemon provides syntax spans when a parse tree is available. The worker returns a structured
+result containing diagnostics and proof-state metadata. The main returned fields are
+\texttt{errors}, \texttt{warnings}, \texttt{infos}, and \texttt{sorries}. Each diagnostic contains a severity level,
+a textual message, and a source position:
+\begin{verbatim}
+{
+  "pos": {"line": ..., "column": ...},
+  "endPos": {"line": ..., "column": ...},
+  "severity": "error" | "warning" | "info",
+  "data": "..."
+}
+\end{verbatim}
+
+Operationally, the implementation performs only a coarse separation between unresolved-goal cases and
+fatal failures. Diagnostics indicating remaining goals are handled together with the \texttt{sorries} field,
+which provides the proof states associated with placeholder locations. Other diagnostic failures are passed
+to the Sorrifier as recoverable fatal errors. Worker crashes, system failures, and timeouts are not
+repair targets; they are logged as failed actions.
+
+The recovery pipeline is therefore diagnostic-driven rather than taxonomy-driven. It starts from the
+first Lean error location, or from the first unsolved-goal location when the candidate elaborates but does
+not close the expected target. Given this source position, the Sorrifier attempts to identify the
+affected region and replace it with a placeholder. If an AST can be constructed, the system selects the
+smallest enclosing tactic, tactic sequence, expression, or declaration block that covers the reported
+source position. If the AST is only partial or cannot be constructed due to severe syntax failure, the
+system falls back to a coarser line-, indentation-, or block-based recovery strategy. This fallback
+searches for nearby structural boundaries such as \texttt{have}, bullet blocks, or \texttt{:= by} proof bodies.
+
+Different patch units are used depending on how precisely the failure can be localized. Local errors may
+be patched at the level of a single tactic line or AST node. Repeated failures or severe malformed blocks
+may trigger a larger structural patch that removes or replaces an enclosing command block. If the failure
+occurs in a declaration body and local recovery is unreliable, the system may replace the body with a
+placeholder proof:
+\begin{verbatim}
+:= by
+  sorry
+\end{verbatim}
+
+Unsolved goals are handled differently from fatal failures. For skeleton actions, unresolved goals reported
+through \texttt{sorries} are converted into child OR nodes in the AND/OR graph. For local proof
+actions, remaining goals mean that the action did not discharge the current node. Such actions may still
+receive syntactic recovery reward, but they are not allowed to expand the graph. A more fine-grained
+classifier for parser, elaboration, and type errors is left as a possible implementation refinement.
+
+\section{AST-based Error Localization}
+
+When Lean reports an error source span for a generated script, the Sorrifier maps that span to the narrowest enclosing syntax node in the script's AST. The preferred repair units are a tactic, a tactic sequence, an expression, or a declaration proof body. The system patches the smallest viable unit first, preserving the largest possible amount of surrounding generated code.
+
+If the error belongs to a declaration body, the body can be replaced by a placeholder proof:
+\begin{verbatim}
+:= by
+  sorry
+\end{verbatim}
+If the error belongs to a local tactic or expression, only that local region is replaced where possible.
+
+\paragraph{Iterative Patching Algorithm}
+
+The recovery loop operates as follows:
+\begin{enumerate}
+    \item Submit the generated script to Lean for elaboration and verification.
+    \item If the proof is fully verified without placeholders, return full success.
+    \item If Lean reports a syntax error, elaboration error, type error, or unsolved-goal span, locate the smallest enclosing \texttt{Syntax} node or structural block for the diagnostic coordinates.
+    \item Replace the failing node with \texttt{sorry} or a placeholder proof block.
+    \item Re-submit the patched script to Lean.
+    \item Stop when the script becomes placeholder-compilable or the patch budget is exhausted.
+\end{enumerate}
+
+To guarantee termination and avoid cyclic oscillation, the implementation stores hashes of intermediate patched scripts. If a repeated broken state is detected, the algorithm escalates the patch boundary to a larger enclosing structural block, such as an entire \texttt{have} statement or tactic block. If no reliable local repair remains, the action is marked as failed for search while retaining diagnostics for offline analysis.
+
+The iterative nature of the algorithm matters because Lean errors often cascade. A single type mismatch
+or missing argument can make later lines elaborate in the wrong local context, and an unknown identifier
+can cause subsequent tactics to report misleading errors. Patching only the first reported error in one
+pass is therefore not always enough. GammaZero repeatedly submits the patched candidate to Lean so
+that each next diagnostic is computed in the updated proof state. This makes the recovery process
+conservative: each structural replacement is justified by an active Lean response rather than by a purely
+textual guess about which lines look suspicious.
+
+Crucially, the repair loop is not allowed to become a proof search procedure of its own. It does not
+synthesize new lemmas, search for alternative theorem bindings, or replace broken lines with
+semantically different tactics. Its role is to preserve the largest checkable prefix and surrounding
+structure by isolating failures behind placeholders. This keeps the reward interpretation simple. A high
+syntactic score means that much of the model's original code remained Lean-checkable after local
+placeholder insertion; it does not mean that the repair loop invented a new proof path.
+
+\section{Syntactic Survival Signal}
+
+After recovery, the system estimates how much of the original generated proof body survives in the
+patched, placeholder-compilable script. Although AST information may be used to localize failing
+regions during recovery, the current reward implementation does not count AST nodes directly.
+Instead, it uses a line-based syntactic score over cleaned proof lines.
+
+The proof body is normalized by removing blank lines and comment-only lines. The remaining lines
+from the original generation are compared with the lines in the patched script using sequence matching.
+Lines that remain unchanged and in the same relative order are counted as surviving. Lines removed
+by patching, deletion, or orphan-code cleanup are treated as non-surviving.
+
+This produces a syntactic signal: generations that require only small localized patches
+receive higher syntactic reward, while generations whose proof bodies must be mostly replaced by \texttt{sorry}
+receive lower syntactic reward. The exact formula, including the penalty for unused or ineffective code diagnostics,
+is defined in Section~\ref{sec:reward}.
+
+The line-based score is deliberately coarse. Counting AST nodes would make the reward depend on parser details rather than on the proof text produced by the model. 
+Counting surviving lines makes the reward easier to inspect: the recorded trajectory shows exactly which generated lines were preserved and which lines were replaced by placeholders. 
+A short proof whose only line fails should receive little syntactic credit; a longer skeleton that contains several valid declarations before a
+localized failure should receive more. This is not a proof-quality metric, but it is useful feedback for
+future optimization because it distinguishes completely unusable generations from generations that are
+nearly well formed.
+
+There are also cases where recovery is intentionally disabled. Timeouts, worker crashes, and system-level
+failures do not identify a trustworthy local source span, so replacing text with \texttt{sorry} would create a
+misleading syntactic reward signal. Similarly, action-policy violations such as using \texttt{admit} in a skeleton are
+not treated as ordinary Lean failures. They indicate that the model did not follow the action requirement and
+are recorded as rejected candidates.
+
+A limitation of the syntactic score is that it does not measure semantic importance. A single surviving
+line might introduce a crucial subgoal, while several surviving lines might only set up unused
+local names. This is why \(r_{env}\) is later paired with the dependency reward \(r_{dep}\), rather than used alone. The
+syntactic reward answers a narrow question: how much generated Lean structure survived recovery?
+The downstream dependency reward \(r_{dep}\) answers a later question: did that structure matter after the proof was stitched
+and elaborated? Keeping these rewards separate makes the trajectory more interpretable.
+
+Another limitation is that recovery may overestimate low-quality generations. If a long invalid proof contains a few surviving fragments, the line-based score can still assign nonzero reward even when the overall proof direction is poor. 
+A model that repeatedly emits long invalid scripts may still obtain nonzero syntactic rewards if some prefixes
+parse. For this reason, failed actions do not solve states and repaired skeletons receive a mild priority
+penalty. The search can learn from repaired code, but it still prefers clean actions when other signals are
+similar.
+
+
+Concrete Sorrifier examples and line-based reward calculations are moved to Appendix~\ref{app:sorrifier-examples}.

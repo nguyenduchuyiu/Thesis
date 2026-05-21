@@ -1,18 +1,203 @@
-\begin{savequote}[75mm] 
-Nulla facilisi. In vel sem. Morbi id urna in diam dignissim feugiat. Proin molestie tortor eu velit. Aliquam erat volutpat. Nullam ultrices, diam tempus vulputate egestas, eros pede varius leo.
-\qauthor{Quoteauthor Lastname} 
-\end{savequote}
+\chapter{Literature Review}
+\label{sec:literature}
 
-\chapter{Consectetuer adipiscing elit}
+\section{Neural Theorem Proving and Language Models}
 
-\newthought{Lorem ipsum dolor sit amet}, consectetuer adipiscing elit. Morbi commodo, ipsum sed pharetra gravida, orci magna rhoncus neque, id pulvinar odio lorem non turpis. Nullam sit amet enim. Suspendisse id velit vitae ligula volutpat condimentum. Aliquam erat volutpat. Sed quis velit. Nulla facilisi. Nulla libero. Vivamus pharetra posuere sapien. Nam consectetuer. Sed aliquam, nunc eget euismod ullamcorper, lectus nunc ullamcorper orci, fermentum bibendum enim nibh eget ipsum. Donec porttitor ligula eu dolor. Maecenas vitae nulla consequat libero cursus venenatis. Nam magna enim, accumsan eu, blandit sed, blandit a, eros.
+Neural theorem proving has increasingly moved from specialized symbolic heuristics toward systems in
+which neural models propose proof steps and a formal environment checks them. This separation is
+especially important in interactive theorem provers such as Lean, Isabelle, Coq, and HOL-style systems:
+the model may be uncertain, but the proof assistant provides a deterministic verification boundary.
+The practical question is therefore not whether the neural model can be trusted as a proof checker, but
+how to use a fallible proposal model to explore a very large discrete proof space efficiently.
 
-\blindtext
+Early LLM-based formal-proving systems often treated proof search as language modeling over tactic
+sequences. GPT-f demonstrated that a generative model trained on formal proof corpora can propose
+useful theorem-proving steps and that search around these proposals can solve nontrivial formal
+problems \citep{polu2020gptf}. The central lesson is still relevant for Lean-based systems: model
+samples become valuable only after they are embedded in a verification loop. A raw generated proof is
+fragile, but a stream of candidate steps can be filtered, ranked, and combined by an external search
+procedure.
 
-\section{This is section one}
-\blindtext
-\blindmathpaper
+This thesis follows the same verifier-centered philosophy but changes the unit of search. Instead of
+treating every generated step as a flat continuation, GammaZero distinguishes local proof actions
+from skeleton actions. A local proof action is an attempt to finish the current local state; a skeleton is a proposed
+decomposition that creates child subgoals. This makes the search graph closer to the mathematical
+structure of a proof, where an intermediate step is useful only if it is eventually proved and consumed
+by the final argument. The contribution is therefore not a new foundation for formal verification, but a
+search-and-credit structure that makes LLM proposals easier to verify, repair, score, and reuse.
 
-\section{This is section two}
-\blindtext
-\blindmathpaper
+\section{Search Procedures for Formal Proofs}
+
+Search is unavoidable because formal theorem proving has sparse terminal feedback. A proof assistant
+usually provides a binary signal for a complete candidate: the proof either elaborates and type-checks, or
+it does not. Search procedures create intermediate decision points so that failed branches can be
+abandoned without discarding all progress. Beam search, best-first search, Monte Carlo tree search, and
+tree-structured proof search all instantiate this idea, but they differ in how they allocate effort across
+open states.
+
+HyperTree Proof Search studies proof search as a structured exploration problem rather than a single
+linear sequence \citep{lample2022hypertree}. This is conceptually close to the AND/OR perspective used
+in GammaZero. When a proof step creates several subgoals, solving only one branch is insufficient:
+the decomposition succeeds only if every required child is solved. This hard conjunction is easy to lose
+in linear trajectory formulations, where partial progress on a subgoal may look better than it should.
+The AND/OR view makes that dependency explicit.
+
+GammaZero differs from a pure tree-search formulation in two ways. First, it uses Lean scaffolds to keep
+subgoals attached to the exact parent proof in which they were created. A child goal is not simply a
+standalone theorem with a similar statement; it is a placeholder position inside a parent proof body.
+Second, GammaZero uses dense reward information from failed or partially repaired candidates. This
+means search is not only a solver but also a data-generation process: even branches that do not solve the
+root theorem may produce useful supervision about syntax survival, dependency quality, and action type.
+
+\section{Retrieval, Premise Selection, and Hammers}
+
+Many successful theorem-proving systems rely on retrieval or premise selection. In large mathematical
+libraries, the hard part is often not inventing a new proof idea but finding the relevant theorem, lemma,
+definition, or rewrite rule. LeanDojo introduced an environment for interacting with Lean and studied
+retrieval-augmented theorem proving through ReProver \citep{yang2023leandojo}. Its results emphasize
+that LLM proof search benefits from access to library context rather than relying only on the local goal.
+
+Hammer-style systems pursue a related goal by connecting interactive proof assistants to automated
+theorem provers and premise-selection machinery. Thor integrates language models with external
+automated theorem provers, showing that neural guidance and symbolic automation can complement each
+other \citep{jiang2022thor}. The language model can propose or guide a search, while automated tools can
+discharge subgoals once relevant premises have been identified. This pattern is important because it
+suggests that LLMs need not solve every local goal directly; they can also create structure that makes
+other solvers more effective.
+
+GammaZero is compatible with retrieval and hammer-style extensions, but it does not depend on them in
+the current thesis. Its contribution lies one layer lower: it defines how generated actions are verified,
+classified, repaired, inserted into a proof graph, and assigned credit. A future version could augment
+local proof prompts with retrieved premises or allow skeleton prompts to request relevant lemmas,
+but the current architecture first establishes the correctness and reward boundaries for hierarchical
+search.
+
+\section{Sketching, Decomposition, and Informal Guidance}
+
+Several recent systems use informal reasoning or high-level sketches to guide formal proof search.
+Draft, Sketch, and Prove uses informal proof sketches to guide formal theorem provers, reflecting the
+observation that high-level mathematical plans are often easier to generate than fully elaborated formal
+proofs \citep{jiang2022draft}. This line of work is closely related to GammaZero's skeleton actions: both
+approaches separate the discovery of proof structure from the final discharge of low-level subgoals.
+
+The difference is that GammaZero makes the sketch executable as a Lean scaffold. A skeleton is not just
+a natural-language plan. It is a Lean proof body with target child holes, such as local declarations
+introduced by \texttt{have}. This gives the system a precise interface: Lean can elaborate the partial
+structure, report the child proof states associated with placeholders, and later verify the final stitched
+proof. The cost of this precision is that skeletons must obey stricter syntactic and semantic constraints
+than informal sketches. The benefit is that every decomposition is grounded in the same formal context
+as the final proof.
+
+This distinction motivates scaffold-aware subgoal solving. If a skeleton introduces several subgoals,
+the system should not solve each child as if it were an independent theorem detached from its parent
+proof. Local declarations, binder structure, and sibling placeholders all affect what counts as a valid
+replacement. GammaZero therefore focuses one target \texttt{sorry} while sibling subgoals are temporarily
+replaced by \texttt{admit}; the model is asked to solve exactly the focused placeholder and preserve the rest of the
+scaffold. This design turns high-level decomposition into a verifiable editing task.
+
+\section{Benchmarks and Evaluation Datasets}
+
+The miniF2F benchmark has become a standard evaluation set for formal olympiad-style mathematics
+\citep{zheng2021minif2f}. It is useful because it contains problems whose statements are formalized in
+proof assistants, enabling objective measurement of proof success. However, the benchmark also
+illustrates a broader challenge: formal benchmark statements may diverge from the intended informal
+problem, and small differences in theorem statements can substantially change difficulty. The
+miniF2F-Lean revisited work highlights these issues and motivates careful dataset selection and reporting
+\citep{ospanov2025minif2fLeanRevisited}.
+
+ProofNet broadens the evaluation perspective by targeting undergraduate-level mathematics and
+autoformalization \citep{azerbayev2023proofnet}. It is relevant here because a hierarchical prover must
+eventually operate across theorem statements that vary in style, domain, and amount of implicit context.
+Problems from algebra, number theory, inequalities, and elementary analysis often require different kinds
+of generated subgoals. A skeleton mechanism should therefore be evaluated not only by whether it solves
+more roots, but also by whether it proposes subgoals that are meaningful, solvable, and used.
+
+This thesis evaluates GammaZero primarily as a search and reward-data generation framework. The
+reported metrics are therefore broader than root solve rate alone. Root solve rate remains the strongest
+correctness metric, but the system also records generated actions, verification calls, repair rates,
+skeleton commitment statistics, dependency classes, and queue pruning counts. These measurements are
+needed because the framework is designed to generate training data for future optimization, not merely to
+report a single pass rate.
+
+\section{Autoformalization}
+
+Autoformalization studies the translation of informal mathematical statements, proofs, or problem
+descriptions into a formal language that can be checked by a proof assistant. This problem is adjacent to
+formal theorem proving but not identical to it. A prover starts from a formal statement and attempts to
+construct a proof term or tactic script. An autoformalizer may instead start from natural language and
+must decide which definitions, coercions, quantifier order, side conditions, and library notions capture the
+intended mathematics. A formally verified proof of the wrong statement is still a verification artifact, but
+it does not solve the original informal problem.
+
+Large language models have made autoformalization more plausible because they can map between
+informal mathematical prose and formal syntax when given sufficient examples. Wu et al. study
+autoformalization with large language models and show that translation quality can improve when
+informal and formal corpora are used together \citep{wu2022autoformalization}. The central difficulty is
+semantic alignment: the model must preserve the meaning of the informal statement while selecting a
+formal encoding accepted by the target proof assistant. This is especially delicate in mathematics because
+many informal statements suppress assumptions that a formal theorem must make explicit.
+
+ProofNet highlights this distinction by pairing undergraduate-level mathematical problems with formal
+counterparts and by evaluating both autoformalization and proving \citep{azerbayev2023proofnet}. Such
+datasets are valuable because they expose two separate failure modes. A system may fail before proof
+search begins because the formal statement is missing a hypothesis or uses an unsuitable definition. It
+may also receive a correct formal statement but fail to prove it. The miniF2F-Lean revisited analysis
+similarly motivates caution when interpreting formal benchmark results: the exact formal statement and
+library context can alter the problem being measured \citep{ospanov2025minif2fLeanRevisited}.
+
+GammaZero does not attempt autoformalization in this thesis. The input is assumed to be an existing
+Lean theorem statement, and the system's responsibility begins after that statement is fixed. This boundary
+is important for evaluation. A failed GammaZero run should be interpreted as a failure to find a verified
+proof within the current search limits, not as evidence that the informal theorem is false or that the
+formalization is faithful. Conversely, a successful run certifies the formal theorem that Lean checked; it
+does not by itself validate an upstream natural-language translation. Future systems could connect an
+autoformalizer to GammaZero, but the correctness boundary would still need to distinguish translation
+validity from proof validity.
+
+\section{Reinforcement Learning for Theorem Proving}
+
+Reinforcement learning is attractive for theorem proving because proof construction is naturally
+sequential. A prover chooses an action, observes a new state from the proof assistant, and eventually
+receives a success or failure signal. Earlier work on reinforcement learning of theorem proving explored
+how learned guidance can improve symbolic proof search and how proof attempts can produce training
+signal for subsequent attempts \citep{kaliszyk2018reinforcement}. HOList made this direction more
+systematic by providing an environment for machine learning over Higher Order Logic theorem proving,
+with explicit states, actions, and goals suitable for learned policies \citep{bansal2019holist}.
+
+The main obstacle is reward sparsity. A theorem prover may need many local decisions before the final
+checker accepts the proof. Most intermediate states do not come with a natural scalar value, and failed
+branches may still contain useful mathematical structure. This makes a naive terminal reward difficult to
+use: the system learns only that a complete trajectory failed, without knowing whether the early plan was
+bad, the final tactic was malformed, or a promising subgoal was simply not finished in time. Proof-search
+systems therefore often combine policy guidance with search, replay, or additional value estimates rather
+than relying on single sampled trajectories.
+
+Recent neural provers continue this pattern. GPT-f uses a generative model and proof search rather than
+trusting one direct completion \citep{polu2020gptf}. DeepSeek-Prover-V1.5 explicitly combines proof
+assistant feedback with reinforcement learning and Monte Carlo tree search, showing the importance of
+using checker feedback as a learning signal rather than treating the language model as a standalone
+reasoner \citep{xin2024deepseekproverv15}. These systems support a broader lesson: reinforcement
+learning for formal proving is most credible when it is grounded in verified transitions from a proof
+assistant.
+
+This thesis does not train a reinforcement learning policy. Instead, GammaZero is designed to generate RL-compatible scored
+trajectories. Each verified, repaired, failed, or partially useful action can be recorded with environment
+feedback, dependency information, graph position, and final proof outcome. The goal is to make future
+optimization more data-rich: a policy should be able to learn not only which actions solved a root theorem,
+but also which skeletons introduced useful child proof states, which local tactics survived Lean checking,
+and which declarations were unused in the final proof.
+
+\section{Positioning of GammaZero}
+
+Existing work suggests several complementary directions for LLM-assisted theorem proving. Search-based
+systems treat Lean as a verification environment and explore many candidate proof steps. Sketch-based
+systems introduce higher-level proof structure through intermediate steps or informal plans.
+Retrieval-based systems improve local reasoning by exposing relevant library context. Autoformalization
+systems address the upstream problem of producing faithful formal statements from informal mathematics.
+Reinforcement learning systems study how proof-assistant feedback can improve future proposal policies.
+
+GammaZero is positioned between flat tactic search and high-level proof sketching. Instead of generating one tactic at a time, the framework separates local proof generation from explicit proof decomposition. Local proof actions attempt to close the current proof state directly, while skeleton actions introduce proof structure through executable Lean scaffolds with child subgoals.
+
+This separation changes the role of search. The search graph does not expand after every tactic step. New proof states are introduced mainly through decomposition decisions, which makes the growth of the search space depend more on skeleton structure than on low-level tactic exploration. At the same time, every decomposition remains grounded in Lean through elaborated scaffolds and verified child proof states.
+
+GammaZero also differs from purely success-driven proof search. Failed or partially valid generations are not discarded immediately. Instead, the framework extracts repair information, dependency structure, and local verification signals to produce structured search trajectories for future reinforcement learning and policy optimization. In that sense, GammaZero occupies a deliberately narrow but useful position: it assumes the theorem is already formalized, keeps Lean as the correctness authority, uses best-first search to spend effort on promising open states, and records dense feedback that can support future policy learning.

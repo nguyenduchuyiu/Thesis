@@ -1,17 +1,13 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.5.6)  22 MAY 2026 01:31
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.5.6)  22 MAY 2026 02:05
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**/home/huy/Project/Thesis/main
-(/home/huy/Project/Thesis/main.tex
+**/home/huy/Project/Thesis/uet_awesome_thesis/main
+(/home/huy/Project/Thesis/uet_awesome_thesis/main.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
-(./uet_awesome_thesis/uet-awesome-thesis.cls
-
-LaTeX Warning: You have requested document class `uet_awesome_thesis/uet-awesome-thesis',
-               but the document class provides `uet-awesome-thesis'.
-
+(./uet-awesome-thesis.cls
 Document Class: uet-awesome-thesis 2021/12/28 University of Engineering and Technology Thesis Class
 (/usr/share/texlive/texmf-dist/tex/latex/base/book.cls
 Document Class: book 2023/05/17 v1.4n Standard LaTeX document class
@@ -1041,31 +1037,31 @@ File: csquotes.cfg
 )) (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 24.
-LaTeX Font Info:    Trying to load font information for TS1+cmr on input line 24.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 23.
+LaTeX Font Info:    Trying to load font information for TS1+cmr on input line 23.
  (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2023/04/13 v2.5m Standard LaTeX font definitions
 )
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 24.
-LaTeX Font Info:    ... okay on input line 24.
-Package hyperref Info: Link coloring ON on input line 24.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for TU/lmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 23.
+LaTeX Font Info:    ... okay on input line 23.
+Package hyperref Info: Link coloring ON on input line 23.
  (./main.out) (./main.out)
 \@outlinefile=\write4
 \openout4 = `main.out'.
@@ -1124,14 +1120,14 @@ Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
 Package newfloat Info: Trying Plan B...
 Package newfloat Info: `float' package detected.
-LaTeX Info: Redefining \microtypecontext on input line 24.
-Package microtype Info: Applying patch `item' on input line 24.
-Package microtype Info: Applying patch `toc' on input line 24.
-Package microtype Info: Applying patch `eqnum' on input line 24.
+LaTeX Info: Redefining \microtypecontext on input line 23.
+Package microtype Info: Applying patch `item' on input line 23.
+Package microtype Info: Applying patch `toc' on input line 23.
+Package microtype Info: Applying patch `eqnum' on input line 23.
 
-Package microtype Warning: Unable to apply patch `footnote' on input line 24.
+Package microtype Warning: Unable to apply patch `footnote' on input line 23.
 
-Package microtype Info: Applying patch `verbatim' on input line 24.
+Package microtype Info: Applying patch `verbatim' on input line 23.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: No adjustment of tracking.
@@ -1139,61 +1135,88 @@ Package microtype Info: No adjustment of spacing.
 Package microtype Info: No adjustment of kerning.
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-LatinModernRoman.cfg
 File: mt-LatinModernRoman.cfg 2021/02/21 v1.1 microtype config. file: Latin Modern Roman (RS)
-)
-File: uet_awesome_thesis/UET_logo.png Graphic file (type bmp)
-<uet_awesome_thesis/UET_logo.png>
- [1
-
-]
-Package microtype Info: Loading generic protrusion settings for font family
-(microtype)             `lmtt' (encoding: TU).
-(microtype)             For optimal results, create family-specific settings.
-(microtype)             See the microtype manual for details.
- [1
-
-
-] (./main.toc
-LaTeX Font Info:    Calculating math sizes for size <13> on input line 2.
+) (./frontmatter/coverpage.tex
+File: UET_logo.png Graphic file (type bmp)
+<UET_logo.png>
+LaTeX Font Info:    Calculating math sizes for size <13> on input line 4.
 
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <13> not available
-(Font)              size <12> substituted on input line 2.
+(Font)              size <12> substituted on input line 4.
 
 (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-cmr.cfg
 File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman (RS)
 )
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <6.5> not available
-(Font)              size <6> substituted on input line 2.
+(Font)              size <6> substituted on input line 4.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <13> not available
-(Font)              size <12> substituted on input line 2.
+(Font)              size <12> substituted on input line 4.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <6.5> not available
-(Font)              size <6> substituted on input line 2.
+(Font)              size <6> substituted on input line 4.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <13> not available
-(Font)              size <12> substituted on input line 2.
+(Font)              size <12> substituted on input line 4.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <6.5> not available
-(Font)              size <6> substituted on input line 2.
+(Font)              size <6> substituted on input line 4.
 
-LaTeX Font Info:    Trying to load font information for U+msa on input line 2.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 4.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 2.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 4.
  (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
-)
+) [1
+
+]
+LaTeX Font Info:    Calculating math sizes for size <14> on input line 6.
+ [2]
+Underfull \hbox (badness 10000) in paragraph at lines 8--8
+
+ []
+
+[3
+
+
+]
+Underfull \hbox (badness 10000) in paragraph at lines 10--10
+
+ []
+
+[4
+
+
+]) (./frontmatter/thanks.tex [1
+
+
+]) (./frontmatter/abstract.tex
+
+Package xcolor Warning: Incompatible color definition on input line 3.
+
+Package microtype Info: Loading generic protrusion settings for font family
+(microtype)             `lmtt' (encoding: TU).
+(microtype)             For optimal results, create family-specific settings.
+(microtype)             See the microtype manual for details.
+
+Package fancyhdr Warning: \headheight is too small (12.0pt): 
+(fancyhdr)                Make it at least 15.59995pt, for example:
+(fancyhdr)                \setlength{\headheight}{15.59995pt}.
+(fancyhdr)                You might also make \topmargin smaller to compensate:
+(fancyhdr)                \addtolength{\topmargin}{-3.59995pt}.
+
+[2]) (./main.toc
 Underfull \hbox (badness 10000) in paragraph at lines 5--5
  \TU/lmr/m/sc/13 In  
  []
@@ -1293,7 +1316,10 @@ Underfull \hbox (badness 10000) in paragraph at lines 24--24
  \TU/lmr/m/sc/13 Pr  
  []
 
+[3
 
+
+]
 Underfull \hbox (badness 10000) in paragraph at lines 25--25
  \TU/lmr/m/n/13 Pr  
  []
@@ -1323,11 +1349,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 32--32
  \TU/lmr/m/sc/13 AS  
  []
 
-[2
 
-
-
-]
 Underfull \hbox (badness 10000) in paragraph at lines 33--33
  \TU/lmr/m/n/13 Mo  
  []
@@ -1462,7 +1484,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 65--65
  \TU/lmr/m/n/13 Da  
  []
 
-
+[4]
 Underfull \hbox (badness 10000) in paragraph at lines 66--66
  \TU/lmr/m/n/13 Me  
  []
@@ -1507,7 +1529,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 80--80
  \TU/lmr/m/sc/13 Tr  
  []
 
-[3]
+
 Underfull \hbox (badness 10000) in paragraph at lines 86--86
  \TU/lmr/m/sc/13 Ru  
  []
@@ -1521,11 +1543,11 @@ Underfull \hbox (badness 10000) in paragraph at lines 87--87
 \tf@toc=\write6
 \openout6 = `main.toc'.
 
- [4] (./main.lof)
+ [5] (./main.lof)
 \tf@lof=\write7
 \openout7 = `main.lof'.
 
- [5
+ [6
 
 
 ] (./main.lot
@@ -1547,176 +1569,170 @@ Underfull \hbox (badness 10000) in paragraph at lines 12--12
 \tf@lot=\write8
 \openout8 = `main.lot'.
 
- [6
+ [7
 
 
-]
+] (./chapters/chapter1.tex
 Chapter 1.
-Package newfloat Info: Setting Plan B file extension to `lof'... on input line 43.
+Package newfloat Info: Setting Plan B file extension to `lof'... on input line 1.
 [1
 
 
-] [2] [3] [4]
+] [2] [3]) (./chapters/chapter2.tex [4] [5]
 Chapter 2.
-[5
+[6
 
 
-] [6] [7]
+] [7] [8]) (./chapters/chapter3.tex [9]
 Chapter 3.
-[8
+[10
 
 
-] [9] [10] [11] [12] [13]
+] [11] [12] [13] [14] [15] [16]) (./chapters/chapter4.tex [17]
 Chapter 4.
-[14
+[18
 
 
-] [15] [16]
-Overfull \hbox (172.58pt too wide) in paragraph at lines 456--466
+] [19] [20] [21]
+Overfull \hbox (172.58pt too wide) in paragraph at lines 79--89
  [] 
  []
 
-[17] [18] [19]
+[22] [23]) (./chapters/chapter5.tex [24]
 Chapter 5.
-[20
-
-
-]
-Overfull \hbox (0.5167pt too wide) in paragraph at lines 540--548
-[][][]\TU/lmr/m/n/13 The recovery pipeline is therefore diagnostic-driven rather than taxonomy-driven.
- []
-
-[21] [22] [23] [24]
-Chapter 6.
 [25
 
 
-] [26]
-LaTeX Font Info:    Trying to load font information for U+dsrom on input line 776.
+]
+Overfull \hbox (0.5167pt too wide) in paragraph at lines 47--55
+[][][]\TU/lmr/m/n/13 The recovery pipeline is therefore diagnostic-driven rather than taxonomy-driven.
+ []
+
+[26] [27] [28] [29]) (./chapters/chapter6.tex [30]
+Chapter 6.
+[31
+
+
+] [32] [33]
+LaTeX Font Info:    Trying to load font information for U+dsrom on input line 126.
  (/usr/share/texlive/texmf-dist/tex/latex/doublestroke/Udsrom.fd
 File: Udsrom.fd 1995/08/01 v0.1 Double stroke roman font definitions
 )
 Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/13'
-(microtype)             (new value: 13.0pt) on input line 776.
+(microtype)             (new value: 13.0pt) on input line 126.
 Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/9.09996'
-(microtype)             (new value: 9.09996pt) on input line 776.
+(microtype)             (new value: 9.09996pt) on input line 126.
 Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/6.5'
-(microtype)             (new value: 6.5pt) on input line 776.
- [27] [28] [29]
+(microtype)             (new value: 6.5pt) on input line 126.
+ [34] [35]) (./chapters/chapter7.tex [36]
 Chapter 7.
-[30
+[37
 
 
-] [31] [32] [33]
-Overfull \hbox (8.99872pt too wide) in paragraph at lines 957--958
+] [38] [39] [40] [41]
+Overfull \hbox (8.99872pt too wide) in paragraph at lines 116--117
 [][][]\TU/lmr/m/n/13 Run dependency analysis, final stitching, and bottom-up AND/OR reward backup. 
  []
 
-[34]
-Overfull \hbox (73.32333pt too wide) detected at line 990
+[42]
+Overfull \hbox (73.32333pt too wide) detected at line 149
 [][]
  []
 
 
-Overfull \hbox (12.42087pt too wide) detected at line 1001
+Overfull \hbox (12.42087pt too wide) detected at line 160
 []\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 a[]\OT1/cmr/m/n/12 ) = \OML/cmm/m/it/12 ^^L[]r[] \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 ^^L[][][] \OT1/cmr/m/n/12 + \OML/cmm/m/it/12 g\OT1/cmr/m/n/12 (\OML/cmm/m/it/12 n[]\OT1/cmr/m/n/12 ) \OMS/cmsy/m/n/12 ^^@ \OML/cmm/m/it/12 ^^L[][] \OMS/cmsy/m/n/12 ^^@ \OML/cmm/m/it/12 ^^L[]\U/dsrom/m/n/13 1[]\OML/cmm/m/it/12 :
  []
 
-[35] [36] [37]
+[43] [44] [45]) (./chapters/chapter8.tex [46]
 Chapter 8.
-
-Overfull \hbox (1.45738pt too wide) in paragraph at lines 1086--1087
-[][][]\TU/lmr/bx/n/13 Decomposition quality: \TU/lmr/m/n/13 how often skeletons are inserted, committed, solved,
- []
-
-[38
-
-
-]
-Overfull \hbox (28.86737pt too wide) in paragraph at lines 1096--1098
-[][][] [][][]\TU/lmr/m/it/13 Lean environment.[] \TU/lmr/m/n/13 All experiments are conducted in Lean 4 using version \TU/lmtt/m/n/13 v4.29.0-rc1\TU/lmr/m/n/13 .
- []
-
-[39] [40]
-LaTeX Font Info:    Calculating math sizes for size <11.86258> on input line 1179.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/11.86258'
-(microtype)             (new value: 11.86258pt) on input line 1179.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/8.30376'
-(microtype)             (new value: 8.30376pt) on input line 1179.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/5.93129'
-(microtype)             (new value: 5.93129pt) on input line 1179.
-
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-LaTeX Font Info:    Calculating math sizes for size <8.66673> on input line 1203.
-
-LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <4.33336> not available
-(Font)              size <5> substituted on input line 1203.
-
-
-LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <4.33336> not available
-(Font)              size <5> substituted on input line 1203.
-
-
-LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <4.33336> not available
-(Font)              size <5> substituted on input line 1203.
-
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/8.66673'
-(microtype)             (new value: 8.66673pt) on input line 1203.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/6.06668'
-(microtype)             (new value: 6.06668pt) on input line 1203.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/4.33336'
-(microtype)             (new value: 4.33336pt) on input line 1203.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[41] [42]
-Overfull \hbox (20.69618pt too wide) in paragraph at lines 1245--1250
-[][]\TU/lmr/m/n/13 Table [][]8.7.1[][] reports the main decomposition metrics across both splits. The dependency-
- []
-
-[43] [44] [45] [46]
-Chapter 9.
 [47
 
 
-] [48] [49] (./main.bbl [50
-
-
-
-]) [51]
-Appendix A.
-
-Underfull \hbox (badness 10000) in paragraph at lines 1409--1409
-[][][][]|\TU/lmr/m/n/32.34409 Trajectory Case Study:
+]
+Overfull \hbox (1.45738pt too wide) in paragraph at lines 15--16
+[][][]\TU/lmr/bx/n/13 Decomposition quality: \TU/lmr/m/n/13 how often skeletons are inserted, committed, solved,
  []
 
 
-Overfull \hbox (45.77177pt too wide) in paragraph at lines 1426--1428
+Overfull \hbox (28.86737pt too wide) in paragraph at lines 25--27
+[][][] [][][]\TU/lmr/m/it/13 Lean environment.[] \TU/lmr/m/n/13 All experiments are conducted in Lean 4 using version \TU/lmtt/m/n/13 v4.29.0-rc1\TU/lmr/m/n/13 .
+ []
+
+[48] [49] [50]
+LaTeX Font Info:    Calculating math sizes for size <11.86258> on input line 108.
+Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/11.86258'
+(microtype)             (new value: 11.86258pt) on input line 108.
+Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/8.30376'
+(microtype)             (new value: 8.30376pt) on input line 108.
+Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/5.93129'
+(microtype)             (new value: 5.93129pt) on input line 108.
+LaTeX Font Info:    Calculating math sizes for size <8.66673> on input line 132.
+
+
+LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <4.33336> not available
+(Font)              size <5> substituted on input line 132.
+
+
+LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <4.33336> not available
+(Font)              size <5> substituted on input line 132.
+
+
+LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <4.33336> not available
+(Font)              size <5> substituted on input line 132.
+
+Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/8.66673'
+(microtype)             (new value: 8.66673pt) on input line 132.
+Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/6.06668'
+(microtype)             (new value: 6.06668pt) on input line 132.
+Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/4.33336'
+(microtype)             (new value: 4.33336pt) on input line 132.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[51] [52]
+Overfull \hbox (20.69618pt too wide) in paragraph at lines 174--179
+[][]\TU/lmr/m/n/13 Table [][]8.7.1[][] reports the main decomposition metrics across both splits. The dependency-
+ []
+
+[53] [54] [55]) (./chapters/chapter9.tex [56]
+Chapter 9.
+[57
+
+
+] [58]) [59] (./main.bbl [60
+
+
+
+]) [61] (./chapters/appendixA.tex
+Appendix A.
+LaTeX Font Info:    Font shape `TU/lmtt/bx/n' in size <18.72003> not available
+(Font)              Font shape `TU/lmtt/b/n' tried instead on input line 1.
+
+Overfull \hbox (45.77177pt too wide) in paragraph at lines 18--20
 \TU/lmr/m/n/13 also required 36 candidate actions before the search found a useful rational-parameterization
  []
 
-[52
+[62
 
 
 
 
-] [53] [54] [55]
+] [63]) (./chapters/appendixB.tex [64]
 Appendix B.
-[56
+[65
 
 
-] [57] [58]
+] [66]) (./chapters/appendixC.tex [67]
 Appendix C.
-[59
+[68
 
 
-] [60] (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
+]) (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 ) (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-utf32be.def
 File: se-utf32be.def 2019/11/29 v1.12 stringenc: UTF-32BE
-) [61] (./main.aux)
+) [69] (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
@@ -1727,15 +1743,20 @@ LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 460683432B373714D8690AB43B920BD0;12229.
- ) 
-Here is how much of TeX's memory you used:
- 37744 strings out of 474878
- 737061 string characters out of 5762517
- 1934627 words of memory out of 5000000
- 59045 multiletter control sequences out of 15000+600000
- 568876 words of font info for 109 fonts, out of 8000000 for 9000
- 1348 hyphenation exceptions out of 8191
- 123i,19n,131p,2376b,32936s stack positions out of 10000i,1000n,20000p,200000b,200000s
+(rerunfilecheck)             Checksum: 5C5EA3A6BC60C5243A583EA02E687E59;12232.
+ )
+(\end occurred inside a group at level 2)
 
-Output written on main.pdf (68 pages).
+### semi simple group (level 2) entered at line 3 (\begingroup)
+### semi simple group (level 1) entered at line 3 (\begingroup)
+### bottom level 
+Here is how much of TeX's memory you used:
+ 37913 strings out of 474878
+ 740921 string characters out of 5762517
+ 1934627 words of memory out of 5000000
+ 59166 multiletter control sequences out of 15000+600000
+ 571715 words of font info for 123 fonts, out of 8000000 for 9000
+ 1348 hyphenation exceptions out of 8191
+ 123i,32n,131p,2395b,33450s stack positions out of 10000i,1000n,20000p,200000b,200000s
+
+Output written on main.pdf (80 pages).

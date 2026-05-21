@@ -1,2 +1,88 @@
-\chapter{This is title of appendix A}
-\blindmathpaper
+\chapter{Trajectory Case Study: \texttt{aime\_1991\_p9}}
+\label{app:case-study-aime-1991-p9}
+
+This appendix section examines one representative deep trajectory, \texttt{aime\_1991\_p9}. The purpose
+of this case study is not only to show that the theorem was solved, but also to illustrate how GammaZero
+combines local proof actions, skeleton actions, scaffolded subgoal solving, and final proof stitching in a
+single search run.
+
+The theorem was solved at search depth 7. The run generated 506 actions and made 916 Lean verification
+calls. The final search graph contained 545 nodes, including 39 proof-state nodes and 506 action nodes.
+These numbers show that the proof was not obtained by a single direct completion. Instead, the system
+explored a relatively deep AND/OR graph before reconstructing a final Lean proof.
+
+\paragraph{Search structure.}
+The search graph for this theorem contains several points where many candidate actions were explored before a useful decomposition or local proof was found. At the root state, the system expanded 36 candidate actions before selecting the skeleton action that led to the final solved path. A later state, whose goal was to prove the half-angle value
+\[
+\tan(x/2) = \frac{15}{29},
+\]
+also required 36 candidate actions before the search found a useful rational-parameterization skeleton. Another difficult state required proving the quotient identity
+\[
+\frac{1+\cos x}{\sin x} = \frac{1}{\tan(x/2)},
+\]
+and expanded 50 candidate actions before a successful decomposition was found.
+
+This behavior illustrates why priority-based search is useful in this setting. The search does not expand every branch uniformly. Instead, it keeps multiple open proof states in the graph and allocates effort to states that appear more promising under the current heuristic. Some branches remain unresolved or are abandoned when they no longer contribute to the selected proof path.
+
+\paragraph{Committed skeleton path.}
+The selected proof path contains several nested skeleton decompositions. At the root, the successful skeleton exposes the half-angle tangent value as a child subgoal:
+\[
+\tan(x/2) = \frac{15}{29}.
+\]
+It also introduces rational facts about the target rational number \(m\), including the intended value
+\[
+m = \frac{29}{15},
+\]
+and the numerator and denominator facts needed to finish the theorem.
+
+The next major skeleton reduces the original trigonometric equation to a rational equation in the half-angle parameter. The key identity has the form
+\[
+\frac{1}{\cos x} + \tan x
+=
+\frac{1+\tan(x/2)}{1-\tan(x/2)}.
+\]
+Once this identity is available, the equation
+\[
+\frac{1+t}{1-t} = \frac{22}{7}
+\]
+can be solved algebraically to obtain
+\[
+t = \frac{15}{29}.
+\]
+
+A deeper skeleton then introduces the standard rational parameterizations for \(\cos x\) and \(\tan x\), using \(t = \tan(x/2)\):
+\[
+\cos x = \frac{1-t^2}{1+t^2},
+\qquad
+\tan x = \frac{2t}{1-t^2}.
+\]
+These identities reduce the trigonometric part of the proof to algebraic simplification and side conditions about nonzero denominators.
+
+Another nested skeleton proves the cosine parameterization through double-angle identities:
+\[
+\cos x = \cos^2(x/2) - \sin^2(x/2),
+\]
+together with
+\[
+\cos^2(x/2) = \frac{1}{1+t^2},
+\qquad
+\sin^2(x/2) = \frac{t^2}{1+t^2}.
+\]
+This part of the trajectory shows the intended role of skeleton actions: they expose useful subgoals that are difficult to discover through flat tactic-level search, while still keeping those subgoals inside Lean-checkable proof structure.
+
+\paragraph{Local proof actions at the leaves.}
+Although skeleton actions define the high-level proof structure, many leaf states are solved by local proof actions. For example, algebraic subgoals are closed using tactics such as \texttt{field\_simp}, \texttt{ring}, and \texttt{linarith}. Trigonometric identity subgoals are closed using rewrite steps such as \texttt{rw} with standard sine and cosine identities.
+
+The trajectory also contains non-degeneracy subgoals, such as proving that certain cosine terms are nonzero. These side conditions are important because many transformations involve division. In the solved path, such goals are handled by local proofs that derive contradictions from the main hypotheses when a denominator is assumed to be zero.
+
+This division of labor is central to GammaZero. Skeleton actions decide which subgoals should be introduced. Local proof actions then try to solve the focused child states inside the scaffold where those subgoals are needed.
+
+\paragraph{Final stitching.}
+After the required child states are solved, GammaZero propagates solved status upward through the graph. Solved child proof bodies are inserted into the corresponding holes of their parent skeletons. When all children of a skeleton are solved, the parent skeleton can itself become a solved action. This process continues until the root theorem is reconstructed.
+
+For \texttt{aime\_1991\_p9}, the final reconstructed proof contains 95 lines of Lean code and is verified by Lean without \texttt{sorry} or \texttt{admit}. This final check is important. The search graph may contain failed actions, repaired candidates, abandoned branches, and temporary placeholders, but none of these artifacts are accepted as part of the final theorem. The theorem is counted as solved only after Lean checks the reconstructed proof.
+
+\paragraph{What the case study shows.}
+This trajectory illustrates three properties of the framework. First, local proof actions are effective for many leaf goals, especially algebraic simplifications and standard identity rewrites. Second, skeleton actions are useful for exposing deeper proof structure, such as half-angle substitutions, rational parameterizations, and non-degeneracy conditions. Third, scaffolded subgoal solving makes the trajectory inspectable: each child state can be traced back to the parent skeleton that created it, and the final proof can be checked after all solved fragments are stitched together.
+
+The case study also shows why the system records more than root solve rate. The theorem is solved, but the trajectory explains how it was solved: which skeletons created the main proof structure, which local proofs closed the leaves, which branches were abandoned, and how final Lean verification confirmed the reconstructed proof.
