@@ -99,15 +99,22 @@
 \@writefile{toc}{\contentsline {paragraph}{Recovery behavior.}{26}{section*.10}\protected@file@percent }
 \@writefile{toc}{\contentsline {paragraph}{Decomposition quality.}{26}{section*.11}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {8.5}Main Results}{26}{subsection.8.5}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Main proof-search results on the evaluation split.}}{26}{table.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}Ablations}{26}{subsection.8.6}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Ablation results.}}{27}{table.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.7}Trajectory Case Studies}{27}{subsection.8.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.8}Discussion}{27}{subsection.8.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.9}Reproducibility Considerations}{27}{subsection.8.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {8.10}Threats to Validity}{27}{subsection.8.10}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion and Limitations}{28}{section.9}\protected@file@percent }
-\newlabel{sec:conclusion}{{9}{28}{Conclusion and Limitations}{section.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Comparative evaluation of the flat sampling baseline against GammaZero. Direct root solves are counted as the Gemini 3 Flash pass@32 baseline. Search gain is the absolute improvement in solve rate from hierarchical search.}}{26}{table.1}\protected@file@percent }
+\newlabel{tab:main-results}{{1}{26}{Comparative evaluation of the flat sampling baseline against GammaZero. Direct root solves are counted as the Gemini 3 Flash pass@32 baseline. Search gain is the absolute improvement in solve rate from hierarchical search}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Search cost and recovery summary. Actions and Lean calls are averages per theorem; token counts are totals for each split.}}{26}{table.2}\protected@file@percent }
+\newlabel{tab:resource-results}{{2}{26}{Search cost and recovery summary. Actions and Lean calls are averages per theorem; token counts are totals for each split}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6}Recovery Analysis}{27}{subsection.8.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.7}Decomposition Analysis}{27}{subsection.8.7}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Consolidated decomposition and stitching metrics on the miniF2F-valid and miniF2F-test rollout logs. Skeleton counts are reported as total / average added to the search graph per run.}}{27}{table.3}\protected@file@percent }
+\newlabel{tab:deep-metrics}{{3}{27}{Consolidated decomposition and stitching metrics on the miniF2F-valid and miniF2F-test rollout logs. Skeleton counts are reported as total / average added to the search graph per run}{table.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.8}Ablation Study}{28}{subsection.8.8}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Ablation results. Each setting removes one design choice from the full GammaZero system.}}{29}{table.4}\protected@file@percent }
+\newlabel{tab:ablation-results}{{4}{29}{Ablation results. Each setting removes one design choice from the full GammaZero system}{table.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.9}Discussion}{29}{subsection.8.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.10}Reproducibility Considerations}{29}{subsection.8.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.11}Threats to Validity}{30}{subsection.8.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9}Conclusion and Limitations}{30}{section.9}\protected@file@percent }
+\newlabel{sec:conclusion}{{9}{30}{Conclusion and Limitations}{section.9}{}}
 \bibstyle{plainnat}
 \bibdata{sample}
 \bibcite{azerbayev2023proofnet}{{1}{2023}{{Azerbayev et~al.}}{{Azerbayev, Piotrowski, Schoelkopf, Ayers, Radev, and Avigad}}}
@@ -127,14 +134,21 @@
 \bibcite{xin2024deepseekproverv15}{{15}{2024}{{Xin et~al.}}{{Xin, Ren, Song, Shao, Zhao, Wang, Liu, Zhang, Lu, Du, Gao, Zhu, Yang, Gou, Wu, Luo, and Ruan}}}
 \bibcite{yang2023leandojo}{{16}{2023}{{Yang et~al.}}{{Yang, Swope, Gu, Chalamala, Song, Yu, Godil, Prenger, and Anandkumar}}}
 \bibcite{zheng2021minif2f}{{17}{2022}{{Zheng et~al.}}{{Zheng, Han, and Polu}}}
-\@writefile{toc}{\contentsline {section}{\numberline {A}Running Example}{30}{appendix.A}\protected@file@percent }
-\newlabel{app:running-example}{{A}{30}{Running Example}{appendix.A}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {B}Sorrifier Examples and Case Studies}{32}{appendix.B}\protected@file@percent }
-\newlabel{app:sorrifier-examples}{{B}{32}{Sorrifier Examples and Case Studies}{appendix.B}{}}
-\@writefile{toc}{\contentsline {paragraph}{Case 1: Parser error.}{32}{section*.13}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 2: Unresolved name and cascade cleanup.}{32}{section*.14}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 3: Skeleton partial recovery.}{33}{section*.15}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Case 4: Type mismatch.}{33}{section*.16}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {C}Reward Hacking Derivation}{33}{appendix.C}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {D}Design Assumptions and Limitations}{34}{appendix.D}\protected@file@percent }
-\gdef \@abspage@last{34}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Trajectory Case Study: \texttt  {aime\_1991\_p9}}{33}{appendix.A}\protected@file@percent }
+\newlabel{app:case-study-aime-1991-p9}{{A}{33}{Trajectory Case Study: \texttt {aime\_1991\_p9}}{appendix.A}{}}
+\@writefile{toc}{\contentsline {paragraph}{Search structure.}{33}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Committed skeleton path.}{33}{section*.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Local proof actions at the leaves.}{34}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Final stitching.}{34}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{What the case study shows.}{34}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B}Running Example}{35}{appendix.B}\protected@file@percent }
+\newlabel{app:running-example}{{B}{35}{Running Example}{appendix.B}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {C}Sorrifier Examples and Case Studies}{36}{appendix.C}\protected@file@percent }
+\newlabel{app:sorrifier-examples}{{C}{36}{Sorrifier Examples and Case Studies}{appendix.C}{}}
+\@writefile{toc}{\contentsline {paragraph}{Case 1: Parser error.}{36}{section*.18}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 2: Unresolved name and cascade cleanup.}{36}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 3: Skeleton partial recovery.}{37}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Case 4: Type mismatch.}{37}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {D}Reward Hacking Derivation}{37}{appendix.D}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {E}Design Assumptions and Limitations}{38}{appendix.E}\protected@file@percent }
+\gdef \@abspage@last{38}

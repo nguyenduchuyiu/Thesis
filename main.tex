@@ -1093,7 +1093,7 @@ states and task-specific prompts for local proof or skeleton action generation.
 
 \paragraph{Search configuration.}
 For each selected proof state, the search samples candidate actions subject to global and per-state
-generation limits. Tactic attempts are tried before skeleton requests, and the priority queue controls
+generation limits. Local proof attempts are tried before skeleton requests, and the priority queue controls
 which open state is expanded next. The maximum search depth is set to \(D=10\), and the maximum
 number of graph nodes per theorem is set to \(N=512\).
 
@@ -1122,100 +1122,214 @@ competition-style mathematics such as algebra, number theory, and inequalities.
 
 \subsection{Metrics}
 
-We report metrics in four groups: proof success, search cost, recovery behavior, and decomposition quality. This grouping is useful because GammaZero is not evaluated only as a prover, but also as a system that produces structured search trajectories for future optimization.
+We report metrics in four groups: proof success, search cost, recovery behavior, and decomposition quality.
 
 \paragraph{Proof success.}
 The main correctness metric is root solved rate without placeholders. A root theorem is counted as solved only when the final reconstructed proof is accepted by Lean and contains no real \texttt{sorry} or \texttt{admit}. This metric is deliberately strict: placeholder-compilable proofs, partially solved skeletons, and repaired scripts do not count as solved roots.
 
-When multiple independent runs or sampled attempts are available for the same theorem, we also report pass@k. This measures whether at least one attempt within the allowed set solves the theorem.
+We also report direct-root solves as a root-only pass@32 baseline. This
+baseline gives the model the same local proof budget at the root, but does not allow skeleton expansion
+or deeper search. It therefore measures how much of the final solve rate comes from direct local proof
+generation before hierarchical search adds any value.
 
 \paragraph{Search cost.}
-Generated actions count all local proof and skeleton proposals produced by the model interface. Lean verification calls count executions sent to Lean, including calls used during repair and final verification. These two numbers are reported separately because one generated action may trigger several Lean calls if it requires repair, while a rejected action may trigger no full verification if it fails an action check first.
+Generated actions count all local proof and skeleton proposals produced by the model interface. Lean verification calls count executions sent to Lean, including calls used during repair and final verification. These two numbers are reported separately because one generated action may trigger several Lean calls if it requires repair, while an action rejected by a format check may trigger no full verification.
 
-We also report average solved depth and queue pruning count. Average solved depth measures how far the search descends before completing a proof. Queue pruning count measures how often the search removes low-priority open states to stay within its limits.
+We also report average solved depth. A depth of zero means that the theorem was solved directly at the root. A larger depth means that the proof used nested decomposition through skeleton actions.
 
 \paragraph{Recovery behavior.}
-Repaired candidates measure how often the Sorrifier is needed. A high repair rate can have two meanings: the model may be producing many invalid candidates, or the recovery module may be extracting useful signal that would otherwise be discarded. For this reason, repair rate should be interpreted together with syntactic reward and later dependency reward. A repaired candidate that preserves useful proof structure is different from one that collapses to a single placeholder.
+Repaired candidates measure how often the Sorrifier is used. A high repair rate can have two meanings: the model may be producing many invalid candidates, or the recovery module may be extracting useful signal that would otherwise be discarded. For this reason, repair rate is interpreted together with the syntactic reward \(r_{\mathrm{env}}\) and the dependency reward \(r_{\mathrm{dep}}\).
 
-Policy-check rejection rate and subgoal extraction failure rate are also reported. These metrics measure whether generated outputs follow the required action format. A high rejection rate indicates that the model often violates the local proof or skeleton action rules. A high extraction failure rate indicates that generated skeletons or scaffold edits are difficult to map back to the focused target hole.
+We also report the subgoal extraction failure rate for skeleton generations. This measures how often a generated skeleton fails to expose child subgoals that can be inserted into the search graph.
 
 \paragraph{Decomposition quality.}
-Inserted skeletons, commitment counts, and fallback counts measure how proof decomposition is used during search. If skeleton generation is frequent but commitment is rare, the model may be proposing invalid or low-quality decompositions. If fallback is frequent, the first committed skeleton may be unreliable or the search limits may be too tight. If commitment is common but child solve rates are low, the decomposition may expose subgoals that are too difficult for the current local proof policy.
+Skeletons added to the search graph count the number of skeleton actions accepted into the graph for possible expansion. We also separate solved theorems into those solved by direct local proof at the root and those solved using skeleton decomposition.
 
-Dependency-class distribution is the main structural metric for skeleton quality. A good skeleton should increase solved-and-used declarations, keep solved-but-unused declarations low, and avoid unresolved unused subgoals. This distribution also helps diagnose reward hacking. If many skeletons create unused declarations while still receiving high syntactic reward, then syntactic survival alone is not enough, and the dependency reward is necessary.
+Dependency-class distribution is the main structural metric for skeleton quality. Generated child subgoals are classified as solved-and-used, solved-but-unused, unresolved-unused, or unresolved-used. A useful decomposition should create many solved-and-used subgoals, few solved-but-unused subgoals, and few unresolved-used subgoals on active proof paths.
 
 \subsection{Main Results}
 
-TODO: Insert the main result table.
+Table~\ref{tab:main-results} compares the flat sampling baseline with GammaZero on the evaluated
+miniF2F-valid and miniF2F-test rollout logs. The baseline is computed from problems solved directly at
+the root by local proof attempts. These are exactly the problems that do not need skeleton expansion or
+deeper graph search, so they correspond to the Gemini 3 Flash pass@32 setting used in the rollouts.
 
 \begin{table}[h]
 \centering
-\begin{tabular}{lrrrr}
-\hline
-Setting & Solved & Solve Rate & Generated Actions & Lean Calls \\
-\hline
-GammaZero & TODO & TODO & TODO & TODO \\
-\hline
+\small
+\begin{tabular}{@{}llccc@{}}
+\toprule
+Split & Method & Solved & Solve Rate & Search Gain \\
+\midrule
+miniF2F-valid & Gemini 3 Flash pass@32 & 13 / 33 & 39.4\% & -- \\
+miniF2F-valid & \textbf{GammaZero} & \textbf{27 / 33} & \textbf{81.8\%} & \textbf{+42.4\%} \\
+\midrule
+miniF2F-test & Gemini 3 Flash pass@32 & 21 / 36 & 58.3\% & -- \\
+miniF2F-test & \textbf{GammaZero} & \textbf{28 / 36} & \textbf{77.8\%} & \textbf{+19.4\%} \\
+\bottomrule
 \end{tabular}
-\caption{Main proof-search results on the evaluation split.}
+\caption{Comparative evaluation of the flat sampling baseline against GammaZero. Direct root solves are counted as the Gemini 3 Flash pass@32 baseline. Search gain is the absolute improvement in solve rate from hierarchical search.}
+\label{tab:main-results}
 \end{table}
 
-TODO: Discuss root solved rate, average search cost, repair rate, and final verification success.
+GammaZero solves 27 out of 33 evaluated validation theorems and 28 out of 36 evaluated test theorems.
+The corresponding root solve rates are 81.8\% and 77.8\%. Compared with direct root sampling, the
+hierarchical search adds 14 solved validation theorems and 7 solved test theorems. The absolute gains are
+42.4 percentage points on validation and 19.4 percentage points on test.
 
-\subsection{Ablations}
-We evaluate the following ablations: no Sorrifier, no scaffold-aware subgoal solving, no local-proof-first rule, no skeleton commitment, no dependency reward, FIFO/level-wise selection versus priority queue, and different generated-action and depth limits.
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Split & Actions & Lean Calls & Repair & Input Tok. & Output Tok. \\
+\midrule
+miniF2F-valid & 124.1 & 229.7 & 77.2\% & 14.0M & 5.7M \\
+miniF2F-test & 106.9 & 198.7 & 80.4\% & 16.1M & 6.2M \\
+\bottomrule
+\end{tabular}
+\caption{Search cost and recovery summary. Actions and Lean calls are averages per theorem; token counts are totals for each split.}
+\label{tab:resource-results}
+\end{table}
 
-Each ablation isolates one design choice. Removing the Sorrifier tests whether partial-credit
-signals are actually helping or merely adding noise. Removing scaffold-aware subgoal solving tests
-whether exact parent-scaffold tracking matters beyond ordinary placeholder extraction. Removing the
-local-proof-first rule tests whether the search benefits from trying cheap local closure before decomposing a
-goal. Removing skeleton commitment tests whether multiple incompatible decompositions cause the
-search to diffuse its effort. Removing dependency reward tests whether structural usefulness matters
-once syntactic survival has already been counted. Comparing FIFO or level-wise selection against a
-priority queue tests whether best-first ordering really matters for these proof graphs.
+All 55 solved roots across the two splits pass final verification after proof stitching, so the reported
+successes are placeholder-free Lean proofs. The search graph may contain repaired candidates, temporary
+placeholders, failed branches, and reserved skeletons, but a root is counted as solved only after the
+selected proof path is reconstructed and checked again by Lean.
 
-The experiments are not meant to produce a single victory number. They should show a profile of how
-the system behaves under different resource budgets and search policies. That profile is useful even if
-root solve rate remains modest, because the thesis contribution is the generation of scored trajectories and
-search structure. In other words, a partially successful system can still be a good thesis result if it makes
-proof search more analyzable, more inspectable, and better suited to future optimization.
+The average solved depth on the validation logs is 1.44. This indicates that many solved theorems are closed by shallow search, but some require deeper decomposition. A depth greater than zero means that the final proof uses at least one skeleton-created child state. Therefore, the solve rate should be interpreted together with the decomposition metrics below.
 
-TODO: Insert ablation table.
+\subsection{Recovery Analysis}
+
+Across the 33 validation rollout logs, the Sorrifier repairs 3,161 out of 4,095 generated actions,
+giving a repair rate of 77.19\%. Across the 36 test rollout logs, it repairs 3,092 out of 3,848
+generated actions, giving a repair rate of 80.35\%. These high repair rates show that invalid Lean
+generations are common in this setting. They also show why binary success or failure is not sufficient for
+data generation: many invalid candidates still contain recoverable local structure.
+
+On the validation logs, the average syntactic reward \(r_{\mathrm{env}}\) is 0.6717, while the average dependency reward \(r_{\mathrm{dep}}\) is 0.1060. On the test logs, the corresponding values are 0.6781 and 0.0780. The gap between these values is informative. It suggests that many generated fragments can survive recovery or compile with placeholders, but only a smaller fraction contributes to the final proof structure.
+
+This supports the need for dependency-based reward. If the system used only syntactic survival, it would overestimate proof fragments that look well formed but do not help the completed proof. The dependency reward provides a later structural signal: it asks whether the generated declarations are actually used in the proof that Lean checks.
+
+The subgoal extraction failure rate is 45 out of 582 skeleton generations on validation, or 7.73\%.
+On test, it is 54 out of 598 skeleton generations, or 9.03\%. This means that most skeleton generations
+can be mapped into child subgoals under the scaffold representation. The remaining failures are still
+useful diagnostics: they indicate cases where the model produced a skeleton-like output that could not be
+safely connected to the focused target hole.
+
+\subsection{Decomposition Analysis}
+
+Table~\ref{tab:deep-metrics} reports the main decomposition and stitching metrics across both splits.
+
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Metric & miniF2F-valid & miniF2F-test \\
+\midrule
+Solved / total & 27 / 33 (81.8\%) & 28 / 36 (77.8\%) \\
+Final stitching success & 27 / 27 (100.0\%) & 28 / 28 (100.0\%) \\
+Skeletons added to search graph & 568 / 17.21 avg. & 595 / 16.53 avg. \\
+Direct local proof solves & 13 (48.1\%) & 21 (75.0\%) \\
+Skeleton-decomposition solves & 14 (51.9\%) & 7 (25.0\%) \\
+Subgoal extraction failures & 45 / 582 (7.73\%) & 54 / 598 (9.03\%) \\
+Solved and used & 142 & 89 \\
+Solved but unused & 9 & 5 \\
+Unresolved and unused & 145 & 118 \\
+Unresolved and used & 28 & 49 \\
+\bottomrule
+\end{tabular}
+\caption{Consolidated decomposition and stitching metrics on the miniF2F-valid and miniF2F-test rollout logs. Skeleton counts are reported as total / average added to the search graph per run.}
+\label{tab:deep-metrics}
+\end{table}
+
+GammaZero adds 568 skeletons to the search graph across the 33 validation rollout logs and 595 across
+the 36 test rollout logs, with averages of 17.21 and 16.53 skeletons per theorem. This shows that
+decomposition is used frequently during search, rather than appearing only in rare examples.
+
+Among the 27 solved validation theorems, 13 are solved by direct local proof at the root, while 14 use
+skeleton decomposition. Among the 28 solved test theorems, 21 are solved directly at the root, while 7
+require deeper hierarchical search. This split suggests that both action types are useful. Direct local
+proof handles goals that can be closed in the current scaffold. Skeleton actions are needed for theorems
+that benefit from intermediate subgoals.
+
+A theorem solved by direct local proof at the root is also the result that would be obtained by a
+non-hierarchical root-only baseline using the same local proof proposal budget. In this setup, that number
+corresponds to a pass@32-style baseline: the model receives up to 32 local proof attempts at the root,
+without skeleton expansion or deeper search. The hierarchical search solves additional depth-greater-than-zero
+theorems, showing that skeleton expansion and graph search add coverage beyond direct root completion.
+
+Among solved validation child subgoals, 142 are used in the final proof structure and 9 are solved but
+unused. Among solved test child subgoals, 89 are solved and used while only 5 are solved but unused.
+Thus, most solved child subgoals contribute to the selected proof path. This supports the skeleton
+commitment and priority-scoring design: the search usually spends child-solving effort on subgoals that
+remain useful, rather than on branches that disappear from the final proof.
+
+The unresolved classes provide a different diagnostic. The validation logs contain 145 unresolved-unused
+and 28 unresolved-used subgoals, while the test logs contain 118 unresolved-unused and 49 unresolved-used
+subgoals. Unresolved-unused subgoals mostly correspond to branches that are not part of the selected proof
+path or are abandoned before completion. Unresolved-used subgoals are more serious: they occur in proof
+structures that still depend on unsolved children. These cases identify bottlenecks where the current local
+proof policy or search limits are insufficient.
+
+The dependency distribution also explains why \(r_{\mathrm{dep}}\) is much lower than \(r_{\mathrm{env}}\). Many generated fragments are recoverable, but the final proof uses only a subset of the generated structure. This is expected in a search system: not every explored branch becomes part of the final proof. The important point is that the trajectory record distinguishes useful solved structure from redundant or unfinished structure.
+
+A detailed trajectory case study for \texttt{aime\_1991\_p9} is included in Appendix~\ref{app:case-study-aime-1991-p9}.
+
+\subsection{Ablation Study}
+
+TODO: Insert ablation results after running the comparison settings.
+
+The ablation study compares the full system against variants that remove one design choice at a time. The main comparison settings are:
+\begin{itemize}
+    \item \textbf{No Sorrifier:} invalid generations are discarded instead of being recovered for partial reward.
+    \item \textbf{No scaffolded subgoal solving:} child subgoals are not solved inside their parent scaffold.
+    \item \textbf{No local-proof-first rule:} skeleton generation is allowed earlier, without first giving local proof actions priority.
+    \item \textbf{No skeleton commitment:} multiple decompositions from the same parent state may compete for search effort.
+    \item \textbf{No dependency reward:} skeletons are evaluated without expression-tree dependency analysis.
+    \item \textbf{FIFO or level-wise expansion:} open states are expanded in a simpler order instead of using priority-queue selection.
+\end{itemize}
+
+Each ablation should use the same theorem set, proposal model, Lean version, generation parameters, and search limits where possible. This keeps the comparison focused on the disabled component rather than on differences in the environment.
+
+TODO: Add the ablation table.
 
 \begin{table}[h]
 \centering
 \begin{tabular}{lrrrr}
 \hline
-Setting & Solved & Lean Calls & Repair Rate & Inserted Skeletons \\
+Setting & Solved & Solve Rate & Avg. Actions & Avg. Lean Calls \\
 \hline
 Full GammaZero & TODO & TODO & TODO & TODO \\
 No Sorrifier & TODO & TODO & TODO & TODO \\
-No local-proof-first & TODO & TODO & TODO & TODO \\
+No scaffolded subgoal solving & TODO & TODO & TODO & TODO \\
+No local-proof-first rule & TODO & TODO & TODO & TODO \\
 No skeleton commitment & TODO & TODO & TODO & TODO \\
-FIFO / level-wise & TODO & TODO & TODO & TODO \\
+No dependency reward & TODO & TODO & TODO & TODO \\
+FIFO / level-wise expansion & TODO & TODO & TODO & TODO \\
 \hline
 \end{tabular}
-\caption{Ablation results.}
+\caption{Ablation results. Each setting removes one design choice from the full GammaZero system.}
+\label{tab:ablation-results}
 \end{table}
 
-\subsection{Trajectory Case Studies}
-
-TODO: Select representative trajectories after the final run.
-
-Case 1: A theorem solved by local proof actions.
-TODO: show the theorem name, number of actions, final proof sketch, and why no skeleton was needed.
-
-Case 2: A theorem solved through skeleton decomposition.
-TODO: show the committed skeleton, child subgoals, child solutions, and final stitched proof.
-
-Case 3: A failed but informative trajectory.
-TODO: show where the search failed, what was recovered, and what labels/rewards were produced.
+The ablation analysis should focus on behavior, not only final solve rate. Removing the Sorrifier should show whether recovery provides useful signal or only adds noise. Removing scaffolded subgoal solving should test whether solving children inside the parent scaffold matters. Removing the local-proof-first rule should show whether early decomposition creates unnecessary child states. Removing skeleton commitment should test whether competing decompositions diffuse search effort. Removing dependency reward should show whether syntactic reward alone overestimates redundant skeletons.
 
 \subsection{Discussion}
 
-TODO: Discuss the main empirical findings after the runs finish.
-TODO: Compare proof success, search cost, recovery behavior, and decomposition quality.
-TODO: Identify the main bottleneck observed in the current implementation.
+The main result shows that GammaZero can solve a large fraction of the evaluated theorem instances while preserving a strict correctness boundary: final success is counted only after Lean verifies the reconstructed proof without placeholders. The final stitching success count is also important. It indicates that the graph can contain many partial or failed branches while still producing a clean final proof when a complete path is found.
+
+The recovery results show that invalid generations are not rare. Most generated actions require some form of repair, but many still preserve enough local structure to provide reward signal. This supports the design decision to separate proof correctness from reward extraction. A repaired script is not a proof, but it can still help describe how much of the generated Lean code was locally meaningful.
+
+The decomposition results show that skeleton actions are used often and that they contribute to solved proofs. The split between direct root solutions and decomposition-based solutions suggests that neither action family is sufficient alone. Local proof actions are useful for shallow goals, while skeleton actions expose intermediate structure in harder proofs.
+
+The gap between \(r_{\mathrm{env}}\) and \(r_{\mathrm{dep}}\) is one of the most important findings. It shows that local recoverability and final proof contribution are different properties. A generated fragment may survive recovery but still not matter to the completed proof. This justifies using expression-tree dependency analysis as a separate structural signal.
+
+At the same time, the results should not be overinterpreted. The evaluation uses a fixed proposal model, a fixed Lean environment, and a finite search budget. Unsolved theorems are not mathematically impossible; they are unsolved under the current configuration. Similarly, unused generated subgoals are unused in the proof path found by the system, not necessarily useless in all possible proofs.
+
 
 \subsection{Reproducibility Considerations}
 
@@ -1313,6 +1427,95 @@ boundary would remain unchanged: whatever the model proposes, Lean must still ch
 \bibliography{sample}
 
 \appendix
+
+\section{Trajectory Case Study: \texttt{aime\_1991\_p9}}
+\label{app:case-study-aime-1991-p9}
+
+This appendix section examines one representative deep trajectory, \texttt{aime\_1991\_p9}. The purpose
+of this case study is not only to show that the theorem was solved, but also to illustrate how GammaZero
+combines local proof actions, skeleton actions, scaffolded subgoal solving, and final proof stitching in a
+single search run.
+
+The theorem was solved at search depth 7. The run generated 506 actions and made 916 Lean verification
+calls. The final search graph contained 545 nodes, including 39 proof-state nodes and 506 action nodes.
+These numbers show that the proof was not obtained by a single direct completion. Instead, the system
+explored a relatively deep AND/OR graph before reconstructing a final Lean proof.
+
+\paragraph{Search structure.}
+The search graph for this theorem contains several points where many candidate actions were explored before a useful decomposition or local proof was found. At the root state, the system expanded 36 candidate actions before selecting the skeleton action that led to the final solved path. A later state, whose goal was to prove the half-angle value
+\[
+\tan(x/2) = \frac{15}{29},
+\]
+also required 36 candidate actions before the search found a useful rational-parameterization skeleton. Another difficult state required proving the quotient identity
+\[
+\frac{1+\cos x}{\sin x} = \frac{1}{\tan(x/2)},
+\]
+and expanded 50 candidate actions before a successful decomposition was found.
+
+This behavior illustrates why priority-based search is useful in this setting. The search does not expand every branch uniformly. Instead, it keeps multiple open proof states in the graph and allocates effort to states that appear more promising under the current heuristic. Some branches remain unresolved or are abandoned when they no longer contribute to the selected proof path.
+
+\paragraph{Committed skeleton path.}
+The selected proof path contains several nested skeleton decompositions. At the root, the successful skeleton introduces the half-angle tangent value as an intermediate fact:
+\[
+\tan(x/2) = \frac{15}{29}.
+\]
+It also introduces rational facts about the target rational number \(m\), including the intended value
+\[
+m = \frac{29}{15},
+\]
+and the numerator and denominator facts needed to finish the theorem.
+
+The next major skeleton reduces the original trigonometric equation to a rational equation in the half-angle parameter. The key identity has the form
+\[
+\frac{1}{\cos x} + \tan x
+=
+\frac{1+\tan(x/2)}{1-\tan(x/2)}.
+\]
+Once this identity is available, the equation
+\[
+\frac{1+t}{1-t} = \frac{22}{7}
+\]
+can be solved algebraically to obtain
+\[
+t = \frac{15}{29}.
+\]
+
+A deeper skeleton then introduces the standard rational parameterizations for \(\cos x\) and \(\tan x\), using \(t = \tan(x/2)\):
+\[
+\cos x = \frac{1-t^2}{1+t^2},
+\qquad
+\tan x = \frac{2t}{1-t^2}.
+\]
+These identities reduce the trigonometric part of the proof to algebraic simplification and side conditions about nonzero denominators.
+
+Another nested skeleton proves the cosine parameterization through double-angle identities:
+\[
+\cos x = \cos^2(x/2) - \sin^2(x/2),
+\]
+together with
+\[
+\cos^2(x/2) = \frac{1}{1+t^2},
+\qquad
+\sin^2(x/2) = \frac{t^2}{1+t^2}.
+\]
+This part of the trajectory shows the intended role of skeleton actions: they expose intermediate facts that are difficult to discover through flat tactic-level search, while still keeping those facts inside Lean-checkable proof structure.
+
+\paragraph{Local proof actions at the leaves.}
+Although skeleton actions define the high-level proof structure, many leaf states are solved by local proof actions. For example, algebraic subgoals are closed using tactics such as \texttt{field\_simp}, \texttt{ring}, and \texttt{linarith}. Trigonometric identity subgoals are closed using rewrite steps such as \texttt{rw} with standard sine and cosine identities.
+
+The trajectory also contains non-degeneracy subgoals, such as proving that certain cosine terms are nonzero. These side conditions are important because many transformations involve division. In the solved path, such goals are handled by local proofs that derive contradictions from the main hypotheses when a denominator is assumed to be zero.
+
+This division of labor is central to GammaZero. Skeleton actions decide which intermediate facts should be introduced. Local proof actions then try to solve the focused child states inside the scaffold where those facts are needed.
+
+\paragraph{Final stitching.}
+After the required child states are solved, GammaZero propagates solved status upward through the graph. Solved child proof bodies are inserted into the corresponding holes of their parent skeletons. When all children of a skeleton are solved, the parent skeleton can itself become a solved action. This process continues until the root theorem is reconstructed.
+
+For \texttt{aime\_1991\_p9}, the final reconstructed proof contains 95 lines of Lean code and is verified by Lean without \texttt{sorry} or \texttt{admit}. This final check is important. The search graph may contain failed actions, repaired candidates, abandoned branches, and temporary placeholders, but none of these artifacts are accepted as part of the final theorem. The theorem is counted as solved only after Lean checks the reconstructed proof.
+
+\paragraph{What the case study shows.}
+This trajectory illustrates three properties of the framework. First, local proof actions are effective for many leaf goals, especially algebraic simplifications and standard identity rewrites. Second, skeleton actions are useful for exposing deeper proof structure, such as half-angle substitutions, rational parameterizations, and non-degeneracy conditions. Third, scaffolded subgoal solving makes the trajectory inspectable: each child state can be traced back to the parent skeleton that created it, and the final proof can be checked after all solved fragments are stitched together.
+
+The case study also shows why the system records more than root solve rate. The theorem is solved, but the trajectory explains how it was solved: which skeletons created the main proof structure, which local proofs closed the leaves, which branches were abandoned, and how final Lean verification confirmed the reconstructed proof.
 
 \section{Running Example}
 \label{app:running-example}
