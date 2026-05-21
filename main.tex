@@ -35,7 +35,7 @@
 \maketitle
 
 \begin{abstract}
-Formal theorem proving in Lean 4 requires exact syntax, exact types, and long-horizon logical planning. This thesis proposes GammaZero, a Lean proof-search and reward-data generation framework that turns LLM samples into verified graph structure. The system separates local proof actions from skeleton actions, verifies every candidate with Lean, repairs invalid generations only for dense feedback, and performs best-first selection over open proof states using a priority queue. Skeletons decompose a proof into named subgoals that are solved in their parent theorem scaffold, with one active skeleton per parent state and reserved skeletons for fallback. Dependency-aware expression-tree analysis and AND/OR backup produce RL-compatible scored trajectories for future policy optimization. Final success always requires Lean verification of a proof with no real \texttt{sorry} or \texttt{admit} placeholder.
+Formal theorem proving in Lean 4 requires exact syntax, exact types, and long-horizon logical planning. This thesis proposes GammaZero, a Lean proof-search and reward-data generation framework that turns LLM samples into verified graph structure. The system separates local proof actions from skeleton actions, verifies every candidate with Lean, repairs invalid generations only for dense feedback, and performs best-first selection over open proof states using a priority queue. Skeletons decompose a proof into child subgoals that are solved in their parent theorem scaffold, with one active skeleton per parent state and reserved skeletons for fallback. Dependency-aware expression-tree analysis and AND/OR backup produce RL-compatible scored trajectories for future policy optimization. Final success always requires Lean verification of a proof with no real \texttt{sorry} or \texttt{admit} placeholder.
 \end{abstract}
 
 \section{Introduction}
@@ -126,6 +126,15 @@ theorem and_comm (P Q : Prop) :
 
 Each tactic transforms a proof state containing local hypotheses and a target goal. If all goals are discharged and the resulting proof term type-checks, Lean accepts the theorem. This kernel-checked execution model is crucial for AI-assisted proving: models may hallucinate, but Lean remains the verifier of final correctness.
 
+Lean also provides placeholder mechanisms for incomplete proofs. The command
+\texttt{sorry} lets a proof script elaborate by inserting a placeholder proof term
+for an unresolved goal. This is useful during development, but it is not an
+accepted final proof in this thesis. Lean also has \texttt{admit}, which is treated
+here as a temporary placeholder used only inside scaffolds to stand for sibling
+subgoals that are not currently being solved. GammaZero may use these placeholders
+to inspect partial proof structure, but a theorem is counted as solved only when
+the final Lean check contains neither \texttt{sorry} nor \texttt{admit}.
+
 Lean also makes proof search more sensitive to context. A tactic such as \texttt{exact h} is meaningful
 only if \texttt{h} is in scope and has a type compatible with the current goal. A rewrite tactic depends on
 which simp lemmas and local equalities are available. A proof by cases or induction can change the shape
@@ -182,7 +191,7 @@ procedure.
 This thesis follows the same verifier-centered philosophy but changes the unit of search. Instead of
 treating every generated step as a flat continuation, GammaZero distinguishes local proof actions
 from skeleton actions. A local proof action is an attempt to finish the current local state; a skeleton is a proposed
-decomposition that creates named subgoals. This makes the search graph closer to the mathematical
+decomposition that creates child subgoals. This makes the search graph closer to the mathematical
 structure of a proof, where an intermediate lemma is useful only if it is eventually proved and consumed
 by the final argument. The contribution is therefore not a new foundation for formal verification, but a
 search-and-credit structure that makes LLM proposals easier to verify, repair, score, and reuse.
@@ -242,7 +251,7 @@ proofs \citep{jiang2022draft}. This line of work is closely related to GammaZero
 approaches separate the discovery of proof structure from the final discharge of low-level subgoals.
 
 The difference is that GammaZero makes the sketch executable as a Lean scaffold. A skeleton is not just
-a natural-language plan. It is a Lean proof body with named placeholders, such as local declarations
+a natural-language plan. It is a Lean proof body with target child holes, such as local declarations
 introduced by \texttt{have}. This gives the system a precise interface: Lean can elaborate the partial
 structure, report the child proof states associated with placeholders, and later verify the final stitched
 proof. The cost of this precision is that skeletons must obey stricter syntactic and semantic constraints
@@ -357,7 +366,7 @@ Retrieval-based systems improve local reasoning by exposing relevant library con
 systems address the upstream problem of producing faithful formal statements from informal mathematics.
 Reinforcement learning systems study how proof-assistant feedback can improve future proposal policies.
 
-GammaZero is positioned between flat tactic search and high-level proof sketching. Instead of generating one tactic at a time, the framework separates local proof generation from explicit proof decomposition. Local proof actions attempt to close the current proof state directly, while skeleton actions introduce intermediate structure through executable Lean scaffolds with named subgoals.
+GammaZero is positioned between flat tactic search and high-level proof sketching. Instead of generating one tactic at a time, the framework separates local proof generation from explicit proof decomposition. Local proof actions attempt to close the current proof state directly, while skeleton actions introduce intermediate structure through executable Lean scaffolds with child subgoals.
 
 This separation changes the role of search. The search graph does not expand after every tactic step. New proof states are introduced mainly through decomposition decisions, which makes the growth of the search space depend more on skeleton structure than on low-level tactic exploration. At the same time, every decomposition remains grounded in Lean through elaborated scaffolds and verified child proof states.
 
@@ -371,9 +380,9 @@ GammaZero also differs from purely success-driven proof search. Failed or partia
 
 Given a theorem statement \(T\), the objective is to construct Lean code that proves \(T\) without using \texttt{sorry}, \texttt{admit}, or any temporary placeholder. Lean verification is the final correctness criterion: a proof is accepted only when the complete theorem is checked successfully.
 
-GammaZero represents proof search as a graph of open proof states. A proof state is not only a goal formula. It also includes the proof context in which that goal appears. This distinction is important because the same goal may occur in different parts of a proof and may have access to different local facts.
+GammaZero still uses proof states as the basic units of search. A Lean proof state provides the local context and target goal that the model must reason about. These remain part of the state representation. However, local context and goal alone are not enough for GammaZero, because they do not fully record where the goal sits inside the parent proof or how a completed child proof will be inserted back. This distinction is important because the same goal may occur in different parts of a proof and may have access to different local facts.
 
-To preserve this context, GammaZero uses a proof scaffold. A scaffold is a partial Lean proof that contains the current hole to be solved, the surrounding proof code, and the structure that connects this hole back to the parent goal. The model is therefore not asked to solve a child goal as an independent theorem. Instead, it solves the goal inside the proof structure where the goal was created.
+To preserve this missing structure, GammaZero adds a proof scaffold around each proof state. A scaffold is a partial Lean proof that contains the current hole to be solved, the surrounding proof code, and the structure that connects this hole back to the parent goal. The model is therefore not asked to solve a child goal as an independent theorem. Instead, it solves the goal inside the proof structure where the goal was created.
 
 Each open state is assigned one target hole. The task of the state is to replace that hole with valid Lean code. Other unfinished holes in the same scaffold are treated as sibling holes. They are not solved by the current state; they belong to other states in the graph. This gives each state a clear local task while still keeping the full parent proof structure visible.
 
@@ -381,11 +390,11 @@ This design is especially important for skeleton actions. A skeleton action may 
 
 At a high level, a scaffolded proof state can be viewed as
 \[
-s = (C, i),
+s = (C, i, \Gamma, G),
 \]
-where \(C\) is the proof scaffold and \(i\) identifies the target hole inside that scaffold. Lean provides the local context and the target goal at this hole, and these are shown to the model to make the task explicit. However, the state is not represented only by the pair of local context and goal. The surrounding scaffold is part of the state because it records where the hole occurs and how the completed proof will connect back to the parent proof.
+where \(C\) is the proof scaffold, \(i\) identifies the target hole inside that scaffold, \(\Gamma\) is the local context, and \(G\) is the target goal. Lean provides \(\Gamma\) and \(G\) at the target hole, and these are shown to the model to make the local task explicit. However, the state is not represented only by \((\Gamma, G)\). The surrounding scaffold and target position are also part of the state because they record where the hole occurs and how the completed proof will connect back to the parent proof.
 This distinction matters because two holes may have the same visible goal but occur in different scaffolds. A proof that is valid for one hole is not necessarily valid for the other.
-This gives each state a simple contract: it may replace the target hole with Lean code, but it must leave the surrounding scaffold unchanged.
+This gives each state a simple rule: it may replace the target hole with Lean code, but it must leave the surrounding scaffold unchanged.
 
 After the required child states are solved, GammaZero inserts their proof bodies back into the parent scaffold and asks Lean to verify the resulting proof again. Temporary placeholders used during search do not count as proof. They are only a way to check one part of a larger proof while the other parts are still being solved. Final success always requires complete Lean verification without placeholders.
 
@@ -460,23 +469,23 @@ A skeleton action has a stricter success condition. If it creates child proof st
 
 A proof state is solved when at least one outgoing action succeeds. A proof state may remain open while there are still allowed attempts or while one of its active decompositions is still being explored. If all useful attempts have failed or the state has exhausted its allowed search budget, it may be marked failed for the current run. If the global search stops while the state is still open, it is recorded as unresolved within limits.
 
-This distinction is important for reward assignment. A repaired candidate may provide useful reward signal, but it cannot solve a state if placeholders remain. A skeleton with one solved child and one unresolved child may contain useful structure, but it is not a solved decomposition. The system may keep immediate rewards and diagnostic information from such actions, while withholding delayed structural credit until the required proof states are actually solved.
+This distinction is important for reward assignment. A repaired candidate may provide useful syntactic reward signal, but it cannot solve a state if placeholders remain. A skeleton with one solved child and one unresolved child may contain useful structure, but it is not a solved decomposition. The system may keep syntactic rewards and diagnostic information from such actions, while withholding delayed structural credit until the required proof states are actually solved.
 
 Timeouts and system failures are treated in the same operational way. They are recorded as failed actions or interrupted checks for the current run, not as evidence about the truth of the theorem. The final correctness boundary remains Lean verification of the completed proof: the root theorem is solved only when Lean accepts the fully assembled proof without \texttt{sorry}, \texttt{admit}, or any temporary placeholder.
 
-\subsection{Formal Invariants}
+\subsection{Design Invariants}
 
 The formulation is governed by a small set of invariants. First, every scaffolded proof state has exactly one target hole. This target is the only location that the current state is responsible for solving. Other unfinished holes in the same scaffold belong to sibling states.
 
 Second, while one target is being solved, sibling subgoals may be represented by temporary \texttt{admit} placeholders. These placeholders are part of the surrounding scaffold and must not be changed by the candidate action. The current action may replace only the target hole.
 
-Third, a local proof action can solve the current target, but it cannot create child proof states. It may use multiple tactics internally, and those tactics may create temporary goals during execution. However, all such goals must be closed by the end of the generated proof body. If any goal remains, the action fails as a local proof action and does not expand the graph.
+Third, local proof actions are terminal with respect to the search graph. They either close the current target or remain failed attempts recorded at the same state; they never introduce child proof states.
 
-Fourth, a skeleton action may create child proof states by extending the current scaffold with named child subgoals. If it creates child states, the skeleton cannot solve its parent until every required child has been solved and the completed scaffold passes Lean verification. If a skeleton creates no child state, it is solved only when Lean verifies that it directly closes the current target.
+Fourth, a skeleton action may create child proof states by extending the current scaffold with child subgoals. If it creates child states, the skeleton cannot solve its parent until every required child has been solved and the completed scaffold passes Lean verification. If a skeleton creates no child state, it is solved only when Lean verifies that it directly closes the current target.
 
-Fifth, a proof state can be marked \textsc{Solved} only through Lean verification. For a local state, the replacement for the target hole must not contain \texttt{sorry}, \texttt{admit}, or any temporary placeholder. For a parent skeleton, all child proof bodies must be stitched back into the parent scaffold and the completed block must be checked again. A repaired script that still contains placeholders may provide reward information, but it cannot solve a state.
+Fifth, a proof state can be marked \textsc{Solved} only through Lean verification. For a local state, the replacement for the target hole must not contain \texttt{sorry}, \texttt{admit}, or any temporary placeholder. For a parent skeleton, all child proof bodies must be stitched back into the parent scaffold and the completed block must be checked again.
 
-The global invariant is that temporary placeholders are never part of an accepted theorem. They are used only to isolate responsibilities during search. Once the graph claims that a parent skeleton is solved, GammaZero inserts the solved child proof bodies into the parent scaffold and asks Lean to verify the assembled proof. The root theorem is accepted only after this recursive assembly reaches the root and Lean verifies the complete theorem without unresolved placeholders.
+The global invariant is that temporary placeholders are never part of an accepted theorem. They are used only to isolate responsibilities during search. A repaired script that still contains placeholders may provide reward information, but it cannot solve a state or appear in the final proof. The root theorem is accepted only after recursive assembly reaches the root and Lean verifies the complete theorem without unresolved placeholders.
 
 These invariants also clarify how failure is represented. Parser errors, elaboration errors, timeouts, and policy-check rejections are failed actions, not failed theorems. An open state that is not solved within the current search limits remains open from the mathematical point of view, even if the exported record labels it as \textsc{Unresolved Within Limits}. This distinction is important for future training: the model should learn that the explored branch did not succeed under the current search configuration, but it should not learn that the underlying goal is false.
 
@@ -548,12 +557,12 @@ placeholder proof:
 Unsolved goals are handled differently from fatal failures. For skeleton actions, unresolved goals reported
 through \texttt{sorries} are converted into child OR nodes in the AND/OR graph. For local proof
 actions, remaining goals mean that the action did not discharge the current node. Such actions may still
-receive immediate recovery reward, but they are not allowed to expand the graph. A more fine-grained
+receive syntactic recovery reward, but they are not allowed to expand the graph. A more fine-grained
 classifier for parser, elaboration, and type errors is left as a possible implementation refinement.
 
 \subsection{AST-based Error Localization}
 
-Let \(\pi\) be a generated script and \(\mathcal{T}(\pi)\) its AST. When Lean reports a source span, the Sorrifier maps that span to the narrowest enclosing syntax node. The preferred repair units are a tactic, a tactic sequence, an expression, or a declaration proof body. The system patches the smallest viable unit first, preserving the largest possible amount of surrounding generated code.
+When Lean reports an error source span for a generated script, the Sorrifier maps that span to the narrowest enclosing syntax node in the script's AST. The preferred repair units are a tactic, a tactic sequence, an expression, or a declaration proof body. The system patches the smallest viable unit first, preserving the largest possible amount of surrounding generated code.
 
 If the error belongs to a declaration body, the body can be replaced by a placeholder proof:
 \begin{verbatim}
@@ -564,72 +573,72 @@ If the error belongs to a local tactic or expression, only that local region is 
 
 \subsection{Iterative Patching Algorithm}
 
-The recovery loop is:
+The recovery loop operates as follows:
 \begin{enumerate}
-    \item Submit the generated script to Lean.
-    \item If it verifies without placeholders, return full success.
-    \item If Lean reports an error span or unsolved-goal span, locate the smallest enclosing AST node.
+    \item Submit the generated script to Lean for elaboration and verification.
+    \item If the proof is fully verified without placeholders, return full success.
+    \item If Lean reports a syntax error, elaboration error, type error, or unsolved-goal span, locate the smallest enclosing \texttt{Syntax} node or structural block for the diagnostic coordinates.
     \item Replace the failing node with \texttt{sorry} or a placeholder proof block.
-    \item Re-submit the patched script.
-    \item Stop when the script becomes placeholder-compilable or the patch limit is exhausted.
+    \item Re-submit the patched script to Lean.
+    \item Stop when the script becomes placeholder-compilable or the patch budget is exhausted.
 \end{enumerate}
 
-To avoid oscillation, the implementation stores hashes of intermediate patched scripts. If a repeated broken state is detected, it escalates to a larger enclosing structural block. If no reliable local repair remains, the action is recorded as failed for search while retaining diagnostics for analysis.
+To guarantee termination and avoid cyclic oscillation, the implementation stores hashes of intermediate patched scripts. If a repeated broken state is detected, the algorithm escalates the patch boundary to a larger enclosing structural block, such as an entire \texttt{have} statement or tactic block. If no reliable local repair remains, the action is marked as failed for search while retaining diagnostics for offline analysis.
 
-The iterative nature of the algorithm matters because Lean errors often cascade. A single missing
-argument can make later lines type-check in a different local context, and an unknown identifier can
-cause subsequent tactics to report misleading errors. Patching only the first error is therefore not always
-enough. GammaZero repeatedly submits the patched candidate to Lean so that the next diagnostic is
-computed in the updated proof state. This makes the repair process conservative: each patch is justified
-by a concrete Lean response, rather than by a purely textual guess about which lines look suspicious.
+The iterative nature of the algorithm matters because Lean errors often cascade. A single type mismatch
+or missing argument can make later lines elaborate in the wrong local context, and an unknown identifier
+can cause subsequent tactics to report misleading errors. Patching only the first reported error in one
+pass is therefore not always enough. GammaZero repeatedly submits the patched candidate to Lean so
+that each next diagnostic is computed in the updated proof state. This makes the recovery process
+conservative: each structural replacement is justified by an active Lean response rather than by a purely
+textual guess about which lines look suspicious.
 
-At the same time, the repair loop is not allowed to become a proof search procedure of its own. It does
-not invent new theorem names, synthesize missing arguments, or replace a broken line with a semantically
-different tactic. Its role is to preserve the largest checkable prefix or surrounding structure by inserting
-placeholders where the generated code fails. This keeps the reward interpretation simple. A high
-survival score means that much of the model's original code remained Lean-checkable after local
-placeholder insertion; it does not mean that the system found a new proof by repairing the code.
+Crucially, the repair loop is not allowed to become a proof search procedure of its own. It does not
+synthesize new lemmas, search for alternative theorem bindings, or replace broken lines with
+semantically different tactics. Its role is to preserve the largest checkable prefix and surrounding
+structure by isolating failures behind placeholders. This keeps the reward interpretation simple. A high
+syntactic score means that much of the model's original code remained Lean-checkable after local
+placeholder insertion; it does not mean that the repair loop invented a new proof path.
 
-\subsection{Dense Syntactic Reward Extraction}
+\subsection{Syntactic Survival Signal}
 
 After recovery, the system estimates how much of the original generated proof body survives in the
 patched, placeholder-compilable script. Although AST information may be used to localize failing
 regions during recovery, the current reward implementation does not count AST nodes directly.
-Instead, it uses a line-based survival score over cleaned proof lines.
+Instead, it uses a line-based syntactic score over cleaned proof lines.
 
 The proof body is normalized by removing blank lines and comment-only lines. The remaining lines
 from the original generation are compared with the lines in the patched script using sequence matching.
 Lines that remain unchanged and in the same relative order are counted as surviving. Lines removed
 by patching, deletion, or orphan-code cleanup are treated as non-surviving.
 
-This produces an immediate recoverability signal: generations that require only small localized patches
-receive higher reward, while generations whose proof bodies must be mostly replaced by \texttt{sorry}
-receive lower reward. The exact formula, including the penalty for unused or ineffective code diagnostics,
+This produces a syntactic signal: generations that require only small localized patches
+receive higher syntactic reward, while generations whose proof bodies must be mostly replaced by \texttt{sorry}
+receive lower syntactic reward. The exact formula, including the penalty for unused or ineffective code diagnostics,
 is defined in Section~\ref{sec:reward}.
 
-The line-based score is deliberately coarse. Counting AST nodes would make the reward sensitive to
-parser details and to how Lean represents syntactic sugar. Counting surviving lines instead aligns the
-signal with the model output that is visible in the trajectory record. A short proof whose only line fails
-should receive little immediate credit; a longer skeleton that contains several valid declarations before a
+The line-based score is deliberately coarse. Counting AST nodes would make the reward depend on parser details rather than on the proof text produced by the model. 
+Counting surviving lines makes the reward easier to inspect: the recorded trajectory shows exactly which generated lines were preserved and which lines were replaced by placeholders. 
+A short proof whose only line fails should receive little syntactic credit; a longer skeleton that contains several valid declarations before a
 localized failure should receive more. This is not a proof-quality metric, but it is useful feedback for
 future optimization because it distinguishes completely unusable generations from generations that are
 nearly well formed.
 
 There are also cases where recovery is intentionally disabled. Timeouts, worker crashes, and system-level
 failures do not identify a trustworthy local source span, so replacing text with \texttt{sorry} would create a
-misleading reward signal. Similarly, action-policy violations such as using \texttt{admit} in a skeleton are
-not treated as ordinary Lean failures. They indicate that the model did not follow the action contract and
+misleading syntactic reward signal. Similarly, action-policy violations such as using \texttt{admit} in a skeleton are
+not treated as ordinary Lean failures. They indicate that the model did not follow the action requirement and
 are recorded as rejected candidates.
 
-A limitation of line-based survival is that it does not measure semantic importance. A single surviving
+A limitation of the syntactic score is that it does not measure semantic importance. A single surviving
 line might introduce a crucial intermediate lemma, while several surviving lines might only set up unused
-local names. This is why \(r_{env}\) is paired with dependency reward rather than used alone. The
-immediate reward answers a narrow question: how much generated Lean structure survived recovery?
-The dependency reward answers a later question: did that structure matter after the proof was stitched
+local names. This is why \(r_{env}\) is later paired with the dependency reward \(r_{dep}\), rather than used alone. The
+syntactic reward answers a narrow question: how much generated Lean structure survived recovery?
+The downstream dependency reward \(r_{dep}\) answers a later question: did that structure matter after the proof was stitched
 and elaborated? Keeping these rewards separate makes the trajectory more interpretable.
 
-Another limitation is that repair can make bad model behavior look superficially organized. A model
-that repeatedly emits long invalid scripts may still obtain nonzero survival rewards if some prefixes
+Another limitation is that recovery may overestimate low-quality generations. If a long invalid proof contains a few surviving fragments, the line-based score can still assign nonzero reward even when the overall proof direction is poor. 
+A model that repeatedly emits long invalid scripts may still obtain nonzero syntactic rewards if some prefixes
 parse. For this reason, failed actions do not solve states and repaired skeletons receive a mild priority
 penalty. The search can learn from repaired code, but it still prefers clean actions when other signals are
 similar.
@@ -644,55 +653,32 @@ Concrete Sorrifier examples and line-based reward calculations are moved to Appe
 
 GammaZero is organized around four interacting components:
 \begin{itemize}
-    \item \textbf{Model interface:} asks the LLM for local proof actions or skeleton actions under separate output contracts.
-    \item \textbf{Lean verification interface:} checks generated candidates, reports diagnostics, returns placeholder states, and rejects candidates that violate the action contract.
+    \item \textbf{Model interface:} asks the LLM for local proof actions or skeleton actions under separate output requirements.
+    \item \textbf{Lean verification interface:} checks generated candidates, reports diagnostics, returns placeholder states, and rejects candidates that violate the action requirement.
     \item \textbf{Sorrifier:} repairs invalid candidates with \texttt{sorry} only for partial reward estimation.
     \item \textbf{Search and reward evaluator:} maintains the AND/OR graph, selects open states using a priority queue, computes rewards, and exports scored trajectories.
 \end{itemize}
 
 These components implement the formulation from Section~\ref{sec:problem-formulation}. The model proposes candidate proof code, Lean checks it, the graph records the resulting state changes, and the reward evaluator stores both successful and failed attempts for later analysis.
 
-\subsection{End-to-End Lifecycle}
+\subsection{Scaffold Rule in the Implementation}
 
-A typical GammaZero run begins with a theorem whose proof body contains one root placeholder. Lean is
-asked for the initial proof state, and the state is inserted into the priority queue. The search loop then
-selects an open state, serializes the scaffold, target goal, and local context, and asks the model for local proof attempts. If
-a local proof action closes the state, the state becomes solved and the solution can propagate upward. If local proof attempts fail
-but still receive high recoverability scores, the state may receive more local proof attempts. If local closure
-appears unlikely, the state becomes eligible for skeleton generation.
+The scaffold rule from Section~\ref{sec:problem-formulation} is enforced at the level of candidate extraction. When a skeleton creates child subgoals, each child is checked inside a scaffold derived from the parent proof. The focused child is represented by the target \texttt{sorry}, while sibling children are represented by temporary \texttt{admit} placeholders.
 
-When the model proposes a skeleton, Lean checks whether the parent proof body can elaborate with
-named placeholders. The system extracts each placeholder as a child proof state and constructs a scaffold
-for solving that child. The best skeleton for the parent is committed, and its child states are inserted
-into the priority queue. Other promising skeletons may be reserved. Search then continues from the
-highest-priority open child, which may itself be solved by a local proof action or decomposed by another skeleton.
-
-When a child is solved, its proof body is inserted into the corresponding placeholder of its parent
-skeleton. If all children of a committed skeleton are solved, the skeleton becomes a solved action and
-the parent state becomes solved. This propagation can continue until the root theorem is solved. The
-final theorem is then reconstructed from the selected solved actions, cleaned through dependency
-analysis where possible, and verified again by Lean. The exported graph record still contains failed
-actions, repaired candidates, reserved skeletons, and pruned states, but the final proof contains only the
-selected verified path.
-
-\subsection{Scaffold Contract in the Implementation}
-
-The scaffold contract from Section~\ref{sec:problem-formulation} is enforced at the level of candidate extraction. When a skeleton creates child subgoals, each child is checked inside a scaffold derived from the parent proof. The focused child is represented by the target \texttt{sorry}, while sibling children are represented by temporary \texttt{admit} placeholders.
-
-The model may see the surrounding scaffold, but the accepted action is only the replacement for the target hole. If the returned code changes a sibling \texttt{admit}, removes surrounding declarations, or modifies the parent assembly, the action is rejected or recorded as an extraction failure. The local contract is:
+The model may see the surrounding scaffold, but the accepted action is only the replacement for the target hole. If the returned code changes a sibling \texttt{admit}, removes surrounding declarations, or modifies the parent assembly, the action is rejected or recorded as an extraction failure. The local rule is:
 \begin{quote}
 solve exactly this \texttt{sorry}; keep every \texttt{admit} unchanged.
 \end{quote}
 
 Each state with a scaffold records the scaffold hash, target kind, target index, and, when available, the target label inferred from the declaration that contains the target. If the target placeholder appears in \texttt{have h\_step : P := by sorry}, the target label is \texttt{h\_step}. These fields are part of state identity, so two equal-looking goals are not conflated when they occupy different scaffold positions.
 
-This representation is also used for nested skeletons. A local proof action must replace only the target placeholder and must not modify sibling \texttt{admit} placeholders. A child skeleton may introduce further named child subgoals, but the extracted replacement is still checked against the original scaffold before it is accepted.
+This representation is also used for nested skeletons. A local proof action must replace only the target placeholder and must not modify sibling \texttt{admit} placeholders. A child skeleton may introduce further child subgoals, but the extracted replacement is still checked against the original scaffold before it is accepted.
 
 Target labels and target indices make this check stable. A label helps humans read the log; the index helps the system identify the exact placeholder when several similar declarations appear in a single proof body. Together they make the extracted action robust to superficial formatting changes.
 
 \subsection{Model Interface and Output Parsing}
 
-The model is used as a fixed proposal mechanism. For local proof requests, the prompt asks for Lean proof code that closes the current target and forbids \texttt{sorry} and \texttt{admit}. For skeleton requests, the prompt asks for a proof outline with named child subgoals. \texttt{admit} is forbidden, and \texttt{sorry} is allowed only for named child subgoals, for example:
+The model is used as a fixed proposal mechanism. For local proof requests, the prompt asks for Lean proof code that closes the current target and forbids \texttt{sorry} and \texttt{admit}. For skeleton requests, the prompt asks for a proof outline with child subgoals. \texttt{admit} is forbidden, and \texttt{sorry} is allowed only for those child subgoals, for example:
 \begin{verbatim}
 have h_step : P := by
   sorry
@@ -704,7 +690,33 @@ The prompt may include optional natural-language reasoning, but only the Lean co
 
 Candidates are executed by persistent Lean workers. The returned result includes diagnostics, warnings, placeholder locations, generated proof states, and enough source-position metadata for repair and subgoal extraction. A local proof action succeeds only if Lean closes the current state with no real \texttt{sorry} or \texttt{admit}. A skeleton is accepted as a candidate when it passes the skeleton format checks and either closes the current target directly or exposes valid child proof states.
 
-Failed candidates may be sent to the Sorrifier for immediate reward estimation. Repair does not turn a failed local proof action into a solved state, and it does not turn a placeholder-containing skeleton into a final proof. System failures, worker crashes, and timeouts are recorded as failed actions with metadata, not repaired as proof fragments.
+Verification is iterative at the action level. For each generated candidate, GammaZero first materializes the candidate inside the current scaffold: a local proof action is inserted as the replacement for the target \texttt{sorry}, while a skeleton is inserted as the parent proof body with child holes temporarily represented by \texttt{sorry}. Lean then checks the resulting scaffold, not only the isolated fragment returned by the model. If the candidate is rejected or can only be used for syntactic reward, the search samples or repairs another candidate and repeats this materialize-and-check loop until it finds an accepted action or reaches the configured action and verification limits.
+
+Failed candidates may be sent to the Sorrifier for syntactic reward estimation. Repair does not turn a failed local proof action into a solved state, and it does not turn a placeholder-containing skeleton into a final proof. System failures, worker crashes, and timeouts are recorded as failed actions with metadata, not repaired as proof fragments.
+
+\subsection{Lean Metaprogramming Servers}
+
+Lean verification is the main computational cost in GammaZero. The implementation therefore avoids
+starting a fresh Lean process for every small query. Instead, it uses persistent Lean-side services built
+with Lean metaprogramming. These services expose the information needed by search while reusing the
+same loaded environment, imports, and worker state across many candidate checks.
+
+The AST server is used for syntax-level operations. Given generated proof code and a diagnostic span, it
+returns the surrounding syntax nodes and source ranges needed by the Sorrifier. This makes repair
+structural: the system can patch a tactic, expression, or proof block instead of guessing from raw text.
+Because the syntax tree is produced by Lean's own parser, the search does not need to repeatedly
+reconstruct approximate parse information outside Lean.
+
+The expression server is used after elaboration. It exports selected Lean expressions, including proof
+bodies and local declarations, into a JSON form that the dependency analyzer can traverse. This supports
+the \(r_{dep}\) reward without asking Lean to re-elaborate the same proof many times for each dependency
+question. The server also keeps the boundary clear: Lean produces authoritative elaborated expressions,
+while the external analyzer only reads those expressions and computes usage information.
+
+Together, the persistent workers, AST server, and expression server are resource optimizations, not new
+logical rules. They reduce process startup cost, repeated imports, duplicated parsing, and repeated
+elaboration work. Correctness still comes from ordinary Lean verification of the materialized scaffold
+and, at the end, the reconstructed theorem without placeholders.
 
 \subsection{Priority-Queue Search}
 
@@ -731,7 +743,7 @@ Micro-batching is used only as an execution schedule for model calls and Lean ve
 
 The search does not request skeletons immediately for every state. For a new state, GammaZero first samples local proof actions because many Lean goals can be closed inside the current scaffold and should not be decomposed. A skeleton request is made only after local proof attempts fail to solve the state, after the state has used enough local attempts, or after priority signals indicate that decomposition may be useful.
 
-The rule is adaptive. If failed local proof attempts have high \(r_{env}\), the system may continue local proof sampling longer because the model is producing Lean code that mostly survives verification and repair. If local proof attempts have low recoverability or repeatedly leave the same state open, the state becomes eligible for skeleton generation earlier.
+The rule is adaptive. If failed local proof attempts have high \(r_{env}\), the system may continue local proof sampling longer because the model is producing Lean code with high syntactic reward. If local proof attempts have low syntactic reward or repeatedly leave the same state open, the state becomes eligible for skeleton generation earlier.
 
 \subsection{Skeleton Commitment and Fallback}
 
@@ -748,7 +760,7 @@ The state priority score combines signals that estimate whether expanding a stat
 \begin{aligned}
 \mathrm{score}(s) =
 &\; \alpha_{\mathrm{in}} \mathrm{score}_{\mathrm{incoming}}(s)
-+ \alpha_{\mathrm{last}} \mathrm{score}_{\mathrm{last}}(s)
++ \alpha_{\mathrm{proof}} r_{\mathrm{proof}}^{\mathrm{best}}(s)
 + \alpha_{\mathrm{prog}} \mathrm{bonus}_{\mathrm{committed}}(s) \\
 &- \alpha_{\mathrm{depth}} \mathrm{depth}(s)
 - \alpha_{\mathrm{retry}} \mathrm{tacticTries}(s)
@@ -756,17 +768,18 @@ The state priority score combines signals that estimate whether expanding a stat
 - \alpha_{\mathrm{bad}} \mathrm{badSkeletonRounds}(s).
 \end{aligned}
 \]
-Incoming skeleton score transfers priority from a promising decomposition to its children. The committed-skeleton progress bonus favors children of the active skeleton, especially the last open child. Depth and retry penalties reduce priority for states that are deep, repeatedly attempted, or attached to skeletons with little progress.
+Incoming skeleton score transfers priority from a promising decomposition to its children. The term \(r_{\mathrm{proof}}^{\mathrm{best}}(s)\) is the best syntactic reward obtained by a local proof candidate tried on state \(s\). The committed-skeleton progress bonus favors children of the active skeleton, especially the last open child. Depth and retry penalties reduce priority for states that are deep, repeatedly attempted, or attached to skeletons with little progress.
 
 Skeletons are scored before commitment or reservation:
 \[
 \mathrm{score}(a_{\mathrm{skel}}) =
 \beta_{\mathrm{env}} r_{env}
 + \beta_{\mathrm{parent}} \mathrm{score}_{\mathrm{parent}}
++ g(n_{\mathrm{children}})
 - \beta_{\mathrm{depth}} \mathrm{depth(parent)}
 - \beta_{\mathrm{repair}} \mathds{1}_{\mathrm{repaired}}.
 \]
-This score prefers skeletons that are clean, recoverable, and proposed from promising parent states. A repaired skeleton can still be useful, but a clean skeleton is preferred when other signals are similar.
+This score prefers skeletons that are clean, have high syntactic reward, and are proposed from promising parent states. The term \(g(n_{\mathrm{children}})\) scores the number of child subgoals, penalizing decompositions that create too many branches and giving less value to skeletons that do not expose useful children. A repaired skeleton can still be useful, but a clean skeleton is preferred when other signals are similar.
 
 In practice, the score must interact with the search budget. A skeleton that is only slightly worse than
 the best one may still be worth reserving if the parent state is important and the remaining queue is small.
@@ -790,8 +803,7 @@ time on states that are unlikely to contribute to the final proof. GammaZero the
 part of the search policy, not as an afterthought. The pruning count is one of the recorded metrics
 because it measures how aggressively the search focused on promising open states.
 
-Skeleton scoring plays a similar role at the decomposition level. A skeleton that creates a compact and
-recoverable parent proof may be activated immediately, while a skeleton that repeatedly repairs into a
+Skeleton scoring plays a similar role at the decomposition level. A skeleton that creates a compact parent proof with high syntactic reward may be activated immediately, while a skeleton that repeatedly repairs into a
 fragile structure may remain reserved or be discarded. The score does not claim to predict theorem
 truth; it only predicts whether the candidate is likely to be useful inside the current proof graph. This
 separation between utility and truth is what allows GammaZero to keep using partially successful actions
@@ -799,7 +811,7 @@ as data even when the final theorem is not solved.
 
 \subsection{Final Proof Construction}
 
-When child states are solved, their proof bodies are stitched into the corresponding named child subgoals in the parent skeleton. This process propagates upward: solved children close a skeleton, a solved skeleton closes its parent state, and the root theorem is reconstructed from the selected action chain.
+When child states are solved, their proof bodies are stitched into the corresponding child subgoals in the parent skeleton. This process propagates upward: solved children close a skeleton, a solved skeleton closes its parent state, and the root theorem is reconstructed from the selected action chain.
 
 After stitching, dependency analysis may identify declarations that are solved but unused by the final proof expression. Such unused declarations may be removed, and Lean is asked to verify the cleaned theorem again. The accepted final proof must contain no real \texttt{sorry} or \texttt{admit}; placeholder-compilable scripts are retained only as scored training records.
 
@@ -811,11 +823,36 @@ If the cleaned proof no longer verifies, the theorem is not considered solved. I
 record may be richer than the final proof, but the final proof remains the only object that matters for
 correctness.
 
+\subsection{End-to-End Lifecycle}
+
+With the implementation pieces in place, the full run can be summarized as follows. GammaZero starts
+from a theorem whose proof body contains one root placeholder. Lean returns the initial proof state, and
+the state is inserted into the priority queue. The search then selects an open state, serializes its scaffold,
+local context, and target goal, and asks the model for local proof attempts.
+
+Each candidate is stitched into the current scaffold and checked by Lean. If a local proof action closes
+the target without placeholders, the state becomes solved and the solution can propagate upward. If local
+proof attempts fail but still receive high syntactic scores, the state may receive more local proof
+attempts. If local closure appears unlikely, the state becomes eligible for skeleton generation.
+
+For a skeleton, the parent proof body is checked with temporary child holes. If Lean accepts the
+structure, GammaZero extracts each child hole as a new proof state with its own scaffold. The best
+skeleton for the parent is committed, its child states are inserted into the priority queue, and other
+promising skeletons may be kept as reserves. Search then continues from the highest-priority open child,
+which may itself be solved locally or decomposed by another skeleton.
+
+When a child is solved, its proof body is inserted into the corresponding hole of its parent skeleton. If
+all children of a committed skeleton are solved, the skeleton closes its parent state. This propagation can
+continue until the root theorem is solved. The final theorem is reconstructed from the selected solved
+actions, optionally cleaned by dependency analysis, and verified again by Lean. The exported search
+record may contain failed actions, repaired candidates, reserved skeletons, and pruned states, but the
+final proof contains only the selected verified path.
+
 
 \section{Dense Reward and Credit Assignment}
 \label{sec:reward}
 
-\subsection{Immediate Reward}
+\subsection{Syntactic Reward}
 
 For an action \(a\) generated at state \(s\), let \(L_{\text{orig}}(a)\) be the list of clean proof lines in
 the original generated action, excluding blank lines and comment-only lines. Let \(L_{\text{patch}}(a)\)
@@ -826,7 +863,7 @@ relative order in the patched proof.
 
 Let \(N_{\text{orig}} = |L_{\text{orig}}(a)|\), and let \(N_{\text{dead}}\) be the number of Lean diagnostics
 corresponding to unused or ineffective code, such as warnings that a declaration is unused or that a
-tactic does nothing. The immediate environment reward is:
+tactic does nothing. The syntactic reward is:
 \[
 r_{env}(s,a) =
 \begin{cases}
@@ -836,7 +873,7 @@ r_{env}(s,a) =
 \end{cases}
 \]
 
-This reward is a recoverability signal rather than a proof certificate. It rewards preservation of the
+This reward is a syntactic signal rather than a proof certificate. It rewards preservation of the
 model's original proof structure after recovery, while penalizing deleted, patched, unused, or ineffective
 code. Final proof success is still determined only by Lean verification without any \texttt{sorry}
 placeholder.
@@ -890,7 +927,7 @@ unnecessary structure. An unresolved unused obligation is worse because it both 
 leaves unfinished code in a placeholder-compilable script. This is why the implementation weights it more
 heavily.
 
-For example, suppose a skeleton creates three named subgoals. Two are solved and used by the parent
+For example, suppose a skeleton creates three child subgoals. Two are solved and used by the parent
 proof, while one is solved but unused. Then \(n_{\mathrm{core}}=2\), \(n_{\mathrm{benign}}=1\), and
 \(n_{\mathrm{unused\_failed}}=0\), giving
 \[
@@ -938,7 +975,7 @@ r_{env}(s,a)
 W_{solve}\cdot \mathds{1}_{\mathrm{solved}}(s,a),
 \]
 where \(\mathds{1}_{\mathrm{solved}}(s,a)=1\) only if Lean reports that the current goal is closed without
-\texttt{sorry} or \texttt{admit}. Otherwise, the action receives only its immediate environment reward.
+\texttt{sorry} or \texttt{admit}. Otherwise, the action receives only its syntactic reward.
 
 For OR nodes, corresponding to proof states, the value is determined by the best available action:
 \[
@@ -970,7 +1007,7 @@ Q(s,a)=r_{env}(s,a).
 The \(\min\) operator implements the AND semantics of proof decomposition: the value of a skeleton is
 bottlenecked by its weakest child branch. This prevents the model from receiving delayed structural
 credit for a decomposition that solves only easy subgoals while leaving an essential obligation unresolved.
-Failed or partial actions keep their immediate rewards and diagnostics for analysis, but they do not solve
+Failed or partial actions keep their syntactic rewards and diagnostics for analysis, but they do not solve
 the parent proof state and they do not receive delayed structural credit.
 
 In contrast, the \(\max\) operator at OR nodes reflects ordinary action choice: a proof state is considered
@@ -989,7 +1026,7 @@ or to design future objectives that normalize across action families.
 
 The implemented system produces scored proof-search trajectories rather than an end-to-end optimized
 policy checkpoint. Each sampled action is executed, optionally recovered, inserted into the AND/OR graph,
-and assigned immediate and delayed rewards according to the formulations above. The resulting records
+and assigned syntactic and delayed structural rewards according to the formulations above. The resulting records
 contain the serialized proof state, action type, generated Lean code, recovery result, child proof states,
 graph status, priority-queue metadata, skeleton commitment metadata, and final action value.
 
@@ -1002,68 +1039,35 @@ group would mix incompatible reward scales.
 \subsection{Trajectory Export and Final Verification}
 
 For a successful root theorem, GammaZero reconstructs the proof by recursively inserting solved child
-proof bodies into the named subgoals of the committed parent skeletons. Reserved skeletons and failed
+proof bodies into the child subgoals of the committed parent skeletons. Reserved skeletons and failed
 actions remain in the search record, but they are not part of the selected final proof. After insertion,
 dependency analysis may remove solved declarations that are unused by the elaborated proof expression.
 The resulting theorem is submitted to Lean again. The theorem is accepted as solved only if this final
 verification succeeds without real \texttt{sorry} or \texttt{admit}.
 
-Due to computational resource constraints, this thesis does not train a new policy model with GRPO or
-another reinforcement learning algorithm. Instead, the contribution is the search-and-reward framework
-that generates dense, structured feedback from Lean executions. Policy optimization using the collected
-trajectory data is left for future work.
+The same trajectory records can later support policy optimization, but this thesis stops at verified
+search, reward computation, and data export.
 
 \section{Experiments}
 \label{sec:experiments}
 
 \subsection{Experimental Scope}
 
-The goal of the experiments is to evaluate the implemented hierarchical search and reward-assignment
-framework, rather than to train a new policy model end-to-end. Due to computational resource constraints,
-this thesis does not perform full GRPO training. Instead, the evaluation focuses on whether the proposed
-system can generate structured proof-search trajectories, recover invalid Lean generations, expand
-skeleton-created subgoals, and compute meaningful immediate and structural rewards.
+The goal of the experiments is to evaluate GammaZero as an implemented proof-search and data synthesis framework. The primary question is whether the system can run end-to-end: generate candidate actions, verify them with Lean, expand the subgoals introduced by skeleton actions, recover partial signal from invalid generations, and finally produce Lean-verified proofs without placeholders when the search succeeds.
 
-The evaluation questions are intentionally operational rather than purely descriptive. Does best-first
-selection concentrate work on a smaller number of promising states than a level-wise schedule would? Do
-the local-proof-first and skeleton-commitment rules reduce unnecessary decomposition? Does scaffold-aware
-subgoal extraction preserve the exact target hole while leaving sibling subgoals unchanged? Does the
-dependency reward distinguish useful skeletons from cluttered ones? These questions matter because the
-thesis is about building a search-and-data pipeline, not only about solving a benchmark in isolation.
+The main correctness metric is root solved rate without \texttt{sorry} or \texttt{admit}. However, root solved rate alone does not explain how the system behaves. Since GammaZero is designed to produce structured search trajectories for future policy optimization, the experiments also report diagnostic metrics about search effort, recovery, decomposition, and reward computation.
 
-The experiments therefore measure the behavior of the following implemented components:
+The evaluation therefore focuses on four aspects:
 \begin{itemize}
-    \item best-first priority-queue search over an AND/OR proof graph;
-    \item local-proof-first expansion and skeleton commitment with reserved fallback states;
-    \item execution of local proof and skeleton actions in Lean 4;
-    \item AST-guided recovery of invalid generations through the Sorrifier;
-    \item extraction of scaffold-aware subgoals from \texttt{sorry} placeholders;
-    \item line-based immediate reward computation;
-    \item dependency-aware structural reward computation from elaborated Lean expressions;
-    \item queue pruning and final proof stitching.
+    \item \textbf{Proof success:} whether the final reconstructed proof is accepted by Lean without placeholders.
+    \item \textbf{Search effort:} how many actions are generated, how many Lean verification calls are used, how deep the solved proof becomes, and how often the queue is pruned.
+    \item \textbf{Recovery behavior:} how often invalid generations are repaired by the Sorrifier and how much generated code survives recovery.
+    \item \textbf{Decomposition quality:} how often skeletons are inserted, committed, solved, or abandoned, and how dependency analysis classifies their generated proof fragments.
 \end{itemize}
 
-Each metric is tied to a specific stage of the pipeline. Root solved rate without placeholders is the
-final correctness metric. Generated actions and Lean verification calls measure search effort. Repaired
-candidates and subgoal extraction failures measure how often the system had to recover from model
-errors. Inserted skeletons and commitment/fallback counts measure the decomposition policy. Queue
-pruning counts measure how aggressively the search filtered open states. Average solved depth measures
-how far the system had to descend before a proof was completed. Dependency-class distributions show
-how often skeletons produced useful versus wasteful subgoals. Together, these metrics describe both
-search quality and data quality.
+These measurements are intended to describe the behavior of the implemented framework rather than to claim that every design choice is globally optimal. For example, comparing priority-queue search with a simpler expansion schedule can show whether the search order matters in this implementation, but it is not a universal theorem about best-first search. Similarly, dependency-class statistics help diagnose whether skeletons create useful or redundant structure, but they are not a mathematical measure of proof elegance.
 
-The resulting search records can be viewed as scored proof-search trajectories. They are suitable for
-future policy optimization, but this thesis reports only the search, recovery, and reward-computation
-results obtained from the current implementation.
-
-In addition to aggregate metrics, the experiments should also inspect representative trajectories. A
-useful trajectory is not merely one that solves the root theorem; it is one that reveals where a tactic
-closed a state, where a skeleton introduced a useful subgoal, where repair preserved a large fraction of
-the generated code, and where dependency analysis correctly identified a solved but unused declaration.
-These qualitative checks are especially important because the framework is designed to produce training
-data for later models. A trajectory that looks mathematically promising but is poorly structured for
-credit assignment is less useful than a slightly shorter trajectory that cleanly separates solved,
-redundant, and unresolved subgoals.
+The resulting search records are treated as scored proof-search trajectories. They are suitable for future policy optimization, but this thesis reports only the search, recovery, final verification, and reward-computation results obtained from the current implementation.
 
 \subsection{Setup}
 
@@ -1134,7 +1138,7 @@ policy check first. Reporting both numbers makes the compute profile clearer.
 Repaired candidates measure how often the Sorrifier was needed. A high repair rate can be read in
 two ways: the model may be producing many invalid candidates, but the recovery module may also be
 successfully extracting signal that would otherwise be lost. For this reason, repair rate should be
-interpreted together with line-survival reward and downstream dependency reward. A repaired candidate
+interpreted together with syntactic reward and downstream dependency reward. A repaired candidate
 that preserves useful structure is different from one that collapses to a single placeholder.
 
 Inserted skeletons, commitment counts, and fallback counts measure whether decomposition is being used
@@ -1146,7 +1150,7 @@ the decomposition may expose subgoals that are too hard for the current local pr
 Dependency-class distribution is the main structural metric for skeleton quality. A good skeleton should
 increase solved-and-used declarations, keep solved-but-unused declarations low, and avoid unresolved
 unused subgoals. The distribution also helps diagnose reward hacking. If many skeletons create large
-numbers of unused declarations while still receiving high immediate reward, then syntactic survival is not
+numbers of unused declarations while still receiving high syntactic reward, then syntactic survival is not
 enough and the dependency term is necessary.
 
 \subsection{Ablations}
@@ -1165,7 +1169,7 @@ The experiments are not meant to produce a single victory number. They should sh
 the system behaves under different resource budgets and search policies. That profile is useful even if
 root solve rate remains modest, because the thesis contribution is the generation of scored trajectories and
 search structure. In other words, a partially successful system can still be a good thesis result if it makes
-proof search more analyzable, more recoverable, and better suited to future optimization.
+proof search more analyzable, more inspectable, and better suited to future optimization.
 
 \subsection{Analysis Protocol}
 
@@ -1243,7 +1247,7 @@ This thesis presents a hierarchical framework for Lean 4 theorem proving that se
 
 The current design still has limitations. Dependency-based credit assignment reflects the proof that was found, not necessarily the shortest or mathematically minimal proof. Open subgoals within finite search limits cannot always be distinguished from genuinely impossible subgoals. The effectiveness of skeleton generation depends on the policy model's ability to propose useful intermediate claims. These limitations should be evaluated empirically in the experiments.
 
-There are also broader limitations that are easier to state than to eliminate. The model interface assumes that the LLM can produce output that is at least parseable into Lean code blocks. If the model drifts into natural language, malformed markdown, or repetitive syntax errors, the Sorrifier can recover only a fraction of the damage. The scaffold-aware contract assumes that subgoals can be cleanly associated with a single target hole, which is true for the proof bodies GammaZero is designed to handle but may be awkward for very irregular generated code. The priority queue assumes that the heuristic score is at least informative enough to rank open states roughly by promise; if that score is poor, the system can still search, but it will search more expensively.
+There are also broader limitations that are easier to state than to eliminate. The model interface assumes that the LLM can produce output that is at least parseable into Lean code blocks. If the model drifts into natural language, malformed markdown, or repetitive syntax errors, the Sorrifier can recover only a fraction of the damage. The scaffold-aware rule assumes that subgoals can be cleanly associated with a single target hole, which is true for the proof bodies GammaZero is designed to handle but may be awkward for very irregular generated code. The priority queue assumes that the heuristic score is at least informative enough to rank open states roughly by promise; if that score is poor, the system can still search, but it will search more expensively.
 
 The dependency reward also has an important interpretive limit. It measures usage in the elaborated proof that was found, not a global theorem-theoretic notion of necessity. A declaration can be unused in the final stitched proof and still have been useful as an intermediate exploration step. Likewise, an unresolved child may block the final theorem even if it looks locally reasonable. These are not bugs in the reward definition; they are reminders that the thesis is about search data, not formal proof minimization.
 
@@ -1260,7 +1264,7 @@ decision about when decomposition is useful.
 The final long-term goal is a closed loop: generate search trajectories, score them with Lean-backed
 signals, train a better proposal model, and then use the improved model to generate higher-quality
 trajectories. This thesis implements the first half of that loop. It defines the graph structure, verification
-contracts, repair mechanism, dependency analysis, and trajectory export needed for such training. The
+requirements, repair mechanism, dependency analysis, and trajectory export needed for such training. The
 remaining optimization step is left for future work because it requires substantial compute and careful
 experimental design. Keeping that boundary explicit avoids overstating the contribution while still
 showing how the system can support future reinforcement learning.
@@ -1390,7 +1394,7 @@ child subgoals inside that structure.
 \label{app:sorrifier-examples}
 
 This subsection illustrates how the Sorrifier converts different Lean failures into
-placeholder-compilable scripts and how the line-based survival reward is computed. In all examples,
+placeholder-compilable scripts and how the line-based syntactic reward is computed. In all examples,
 blank lines and comments are excluded from the line count.
 
 \paragraph{Case 1: Parser error.}
@@ -1406,7 +1410,7 @@ have h := 1
 sorry
 \end{verbatim}
 The original body contains two clean lines. One line survives unchanged, while the malformed tactic is
-replaced. Therefore, the immediate reward is:
+replaced. Therefore, the syntactic reward is:
 \[
 r_{\text{env}} = \frac{1}{2} = 0.5.
 \]
