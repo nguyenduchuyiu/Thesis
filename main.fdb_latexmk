@@ -1,14 +1,15 @@
 # Fdb version 4
-["bibtex main"] 1779355672.55355 "main.aux" "main.bbl" "main" 1779355673.61437 0
+["bibtex main"] 1779387559.69579 "main.aux" "main.bbl" "main" 1779387560.90143 0
   "./sample.bib" 1779298029.34626 7894 23100bd63e9d61a379f95aa64b04f91b ""
   "/usr/share/texlive/texmf-dist/bibtex/bst/natbib/plainnat.bst" 1233624470 26816 ffe5423d2019860bad9f54bc402fac15 ""
-  "main.aux" 1779355673.37195 16425 1e37cabc3f9147b0490b0c5257b77777 "pdflatex"
+  "main.aux" 1779387560.60814 16340 4d3517c5117b87aced9d80d92f6d7868 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1779355672.63594 "main.tex" "main.pdf" "main" 1779355673.61455 0
+["pdflatex"] 1779387559.79768 "/home/huy/Project/Thesis/main.tex" "main.pdf" "main" 1779387560.90164 0
   "/etc/texmf/web2c/texmf.cnf" 1746465146.33072 475 c0e671620eb5563b2130f56340a5fde8 ""
+  "/home/huy/Project/Thesis/main.tex" 1779387558.44919 130775 6d1f2e78f7ed4a13000079e80de440fb ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf-pc.enc" 1600636029 2211 c42193888177bc8f86d55dca129a9358 ""
   "/usr/share/texlive/texmf-dist/fonts/enc/dvips/newtx/ntx-ot1-tlf.enc" 1422827479 2083 60e36f8eac802fcaf19eabe2633b406e ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
@@ -170,10 +171,10 @@
   "/usr/share/texmf/web2c/texmf.cnf" 1707919699 40399 f2c302f7d2af602abb742093540a5834 ""
   "/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map" 1746465181.44913 5472669 54eaf61a88b6b7896ebd0dac973cb29c ""
   "/var/lib/texmf/web2c/pdftex/pdflatex.fmt" 1746465294 8213523 9a008df305bdef7d2522bd6524e9a026 ""
-  "main.aux" 1779355673.37195 16425 1e37cabc3f9147b0490b0c5257b77777 "pdflatex"
-  "main.bbl" 1779355672.63197 6513 f0ebb07cb13c3cb8c2f7cb72622a3976 "bibtex main"
-  "main.out" 1779355673.37195 12267 c86ca7c9e1b7cfa42f8f3d4c54c87f6d "pdflatex"
-  "main.tex" 1779355657.46119 136424 9f9becf984590c60ef301421151bbfe7 ""
+  "main.aux" 1779387560.60814 16340 4d3517c5117b87aced9d80d92f6d7868 "pdflatex"
+  "main.bbl" 1779387559.79416 6425 84d47687b5100625f4e9ff24f9d57281 "bibtex main"
+  "main.out" 1779387560.60915 11858 9d6203a367986750567c1ccf2c9cd5b9 "pdflatex"
+  "main.tex" 1779387558.44919 130775 6d1f2e78f7ed4a13000079e80de440fb ""
   (generated)
   "main.aux"
   "main.log"

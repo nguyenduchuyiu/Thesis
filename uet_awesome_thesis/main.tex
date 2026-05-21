@@ -1,0 +1,56 @@
+%!TEX TS-program = xelatex
+\documentclass[en]{uet-awesome-thesis} % use [vi] for vietnamese
+
+\usepackage{blindtext}
+
+\title{This is title of the thesis}
+\author{Trần Thế Phong}
+\major{Công Nghệ Thông Tin}
+\advisor{Prof. Lê Thanh Hà}
+\university{University of Engineering and Technology}
+\universitycity{Hanoi}
+\degreeyear{2022}
+
+\input{frontmatter/glossaries}
+\makeglossaries 
+
+\begin{document}
+
+\input{frontmatter/coverpage}
+\pagenumbering{roman}
+
+\input{frontmatter/thanks}
+
+\addcontentsline{toc}{chapter}{Abstract}
+\input{frontmatter/abstract}
+
+\tableofcontents
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+
+\glsaddall
+\printglossary[type=\acronymtype,title=List of Acronyms, toctitle=List of Acronyms]
+\printglossary[type=notation,title=List of Notations, toctitle=List of Notations,nonumberlist]
+
+\newpage
+\pagenumbering{arabic}
+
+\input{chapters/chapter1}
+\input{chapters/chapter2}
+\input{chapters/chapter3}
+
+\singlespacing
+
+\clearpage
+\bibliography{refs}
+\addcontentsline{toc}{chapter}{References}
+\bibliographystyle{plainnat}
+
+\begin{appendices}
+\input{chapters/appendixA}
+\input{chapters/appendixB}
+\end{appendices}
+
+\end{document}
