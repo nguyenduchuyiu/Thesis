@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.5.6)  23 MAY 2026 20:18
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.5.6)  23 MAY 2026 22:18
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -2110,29 +2110,29 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-LaTeX Font Info:    Calculating math sizes for size <8.66673> on input line 269
+LaTeX Font Info:    Calculating math sizes for size <8.66673> on input line 267
 .
 
 LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <4.33336> not available
-(Font)              size <5> substituted on input line 269.
+(Font)              size <5> substituted on input line 267.
 
 
 LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <4.33336> not available
-(Font)              size <5> substituted on input line 269.
+(Font)              size <5> substituted on input line 267.
 
 
 LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <4.33336> not available
-(Font)              size <5> substituted on input line 269.
+(Font)              size <5> substituted on input line 267.
 
 Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/8.66673'
 
-(microtype)             (new value: 8.66673pt) on input line 269.
+(microtype)             (new value: 8.66673pt) on input line 267.
 Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/6.06668'
 
-(microtype)             (new value: 6.06668pt) on input line 269.
+(microtype)             (new value: 6.06668pt) on input line 267.
 Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/4.33336'
 
-(microtype)             (new value: 4.33336pt) on input line 269.
+(microtype)             (new value: 4.33336pt) on input line 267.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
@@ -2253,6 +2253,9 @@ L3 programming layer <2024-01-22>
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
 Package rerunfilecheck Info: File `main.out' has not changed.
 (rerunfilecheck)             Checksum: 29C4CB6286A4EF15758E384A1A6FADD0;13313.
  )
@@ -2270,4 +2273,4 @@ Here is how much of TeX's memory you used:
  1348 hyphenation exceptions out of 8191
  123i,41n,131p,2355b,33446s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (89 pages, 1609020 bytes).
+Output written on main.xdv (89 pages, 1607184 bytes).

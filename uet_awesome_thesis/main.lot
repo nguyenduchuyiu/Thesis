@@ -8,8 +8,8 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \contentsline {table}{\numberline {8.5.1}{\ignorespaces Comparison on miniF2F-test. For GammaZero, the sample budget denotes the maximum search node budget. The token budget is averaged over solved instances under each cumulative node budget. }}{59}{table.caption.10}%
-\contentsline {table}{\numberline {8.6.1}{\ignorespaces Root-only ablation. Gain is the absolute improvement from enabling skeleton expansion and deeper graph search under the same test set and search budget.}}{59}{table.caption.11}%
-\contentsline {table}{\numberline {8.6.2}{\ignorespaces Depth-based decomposition of solved theorems on the evaluated test set. Direct root solves correspond to flat local proof generation; hierarchical skeleton solves are additional successes whose final proof path uses at least one skeleton decomposition.}}{60}{table.caption.12}%
+\contentsline {table}{\numberline {8.6.1}{\ignorespaces Root-only ablation. Gain is the absolute improvement from increasing the cumulative node budget from the root-only 32-node setting to the full 512-node hierarchical search setting.}}{59}{table.caption.11}%
+\contentsline {table}{\numberline {8.6.2}{\ignorespaces Budget-based decomposition of solved theorems on the evaluated test set. The 32-node setting corresponds to root-level local proof search; the additional gain is obtained by allowing deeper hierarchical search up to 512 nodes.}}{60}{table.caption.12}%
 \contentsline {table}{\numberline {8.6.3}{\ignorespaces The 18 test theorems solved by hierarchical skeleton search. These theorems were not closed by direct root solving; their final accepted proofs required skeleton-created child states.}}{60}{table.caption.13}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }

@@ -69,8 +69,8 @@
 \contentsline {section}{\numberline {8.5}Main Results}{53}{section.8.5}%
 \contentsline {section}{\numberline {8.6}Ablation Study}{54}{section.8.6}%
 \contentsline {section}{\numberline {8.7}Patching and Scoring Signals}{55}{section.8.7}%
-\contentsline {section}{\numberline {8.8}Discussion}{56}{section.8.8}%
-\contentsline {section}{\numberline {8.9}Reproducibility Considerations}{57}{section.8.9}%
+\contentsline {section}{\numberline {8.8}Discussion}{55}{section.8.8}%
+\contentsline {section}{\numberline {8.9}Reproducibility Considerations}{56}{section.8.9}%
 \contentsline {section}{\numberline {8.10}Threats to Validity}{57}{section.8.10}%
 \contentsline {chapter}{\numberline {9}Conclusion and Limitations}{61}{chapter.9}%
 \contentsline {chapter}{References}{66}{chapter*.14}%
