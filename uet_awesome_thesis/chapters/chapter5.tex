@@ -29,14 +29,14 @@ an AST daemon provides syntax spans when a parse tree is available. The worker r
 result containing diagnostics and proof-state metadata. The main returned fields are
 \texttt{errors}, \texttt{warnings}, \texttt{infos}, and \texttt{sorries}. Each diagnostic contains a severity level,
 a textual message, and a source position:
-\begin{verbatim}
+\begin{leanblock}
 {
   "pos": {"line": ..., "column": ...},
   "endPos": {"line": ..., "column": ...},
   "severity": "error" | "warning" | "info",
   "data": "..."
 }
-\end{verbatim}
+\end{leanblock}
 
 Operationally, the implementation performs only a coarse separation between unresolved-goal cases and
 fatal failures. Diagnostics indicating remaining goals are handled together with the \texttt{sorries} field,
@@ -58,10 +58,10 @@ be patched at the level of a single tactic line or AST node. Repeated failures o
 may trigger a larger structural patch that removes or replaces an enclosing command block. If the failure
 occurs in a declaration body and local recovery is unreliable, the system may replace the body with a
 placeholder proof:
-\begin{verbatim}
+\begin{leanblock}
 := by
   sorry
-\end{verbatim}
+\end{leanblock}
 
 Unsolved goals are handled differently from fatal failures. For skeleton actions, unresolved goals reported
 through \texttt{sorries} are converted into child OR nodes in the AND/OR graph. For local proof
@@ -74,10 +74,10 @@ classifier for parser, elaboration, and type errors is left as a possible implem
 When Lean reports an error source span for a generated script, the Sorrifier maps that span to the narrowest enclosing syntax node in the script's AST. The preferred repair units are a tactic, a tactic sequence, an expression, or a declaration proof body. The system patches the smallest viable unit first, preserving the largest possible amount of surrounding generated code.
 
 If the error belongs to a declaration body, the body can be replaced by a placeholder proof:
-\begin{verbatim}
+\begin{leanblock}
 := by
   sorry
-\end{verbatim}
+\end{leanblock}
 If the error belongs to a local tactic or expression, only that local region is replaced where possible.
 
 \paragraph{Iterative Patching Algorithm}

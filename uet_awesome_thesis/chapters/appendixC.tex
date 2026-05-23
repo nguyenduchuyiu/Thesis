@@ -7,16 +7,16 @@ blank lines and comments are excluded from the line count.
 
 \paragraph{Case 1: Parser error.}
 Consider a generated proof body containing a malformed tactic:
-\begin{verbatim}
+\begin{leanblock}
 have h := 1
 apply h (
-\end{verbatim}
+\end{leanblock}
 Lean reports a parser error because the opening parenthesis is not closed. The Sorrifier localizes
 the failing tactic line and replaces it with \texttt{sorry}:
-\begin{verbatim}
+\begin{leanblock}
 have h := 1
 sorry
-\end{verbatim}
+\end{leanblock}
 The original body contains two clean lines. One line survives unchanged, while the malformed tactic is
 replaced. Therefore, the syntactic reward is:
 \[
@@ -25,16 +25,16 @@ r_{\text{env}} = \frac{1}{2} = 0.5.
 
 \paragraph{Case 2: Unresolved name and cascade cleanup.}
 Consider a generated proof body that calls a nonexistent lemma:
-\begin{verbatim}
+\begin{leanblock}
 apply nonexistent_lemma
 rfl
-\end{verbatim}
+\end{leanblock}
 Lean reports an unknown identifier error for \texttt{nonexistent\_lemma}. After this failure, the following
 line is no longer useful in the recovered proof context. The Sorrifier therefore replaces the failed
 region with a single placeholder:
-\begin{verbatim}
+\begin{leanblock}
 sorry
-\end{verbatim}
+\end{leanblock}
 Although the original body has two clean lines, neither line survives unchanged in the patched body.
 Thus:
 \[
@@ -45,20 +45,20 @@ later commands that depend on the proof state created by the failed command.
 
 \paragraph{Case 3: Skeleton partial recovery.}
 The following skeleton introduces a valid proof step before producing an invalid tactic:
-\begin{verbatim}
+\begin{leanblock}
 have h : 1 + 1 = 2 := by
   rfl
 apply nonexistent_lemma
 exact h
-\end{verbatim}
+\end{leanblock}
 The first two lines form a valid local proof step. The third line fails because the
 lemma name cannot be resolved, and the final line becomes unusable after the failed application. The
 patched body is:
-\begin{verbatim}
+\begin{leanblock}
 have h : 1 + 1 = 2 := by
   rfl
 sorry
-\end{verbatim}
+\end{leanblock}
 The original body has four clean lines. The first two lines survive unchanged, while the remaining two
 lines are replaced by a placeholder. Therefore:
 \[
@@ -69,14 +69,14 @@ fully close the goal, valid setup lines and child subgoals can still be preserve
 
 \paragraph{Case 4: Type mismatch.}
 A minimal type mismatch example is:
-\begin{verbatim}
+\begin{leanblock}
 exact 1
-\end{verbatim}
+\end{leanblock}
 when the expected target is a proposition. Lean rejects the term because a numeral does not inhabit the
 expected proposition. The recovered body is:
-\begin{verbatim}
+\begin{leanblock}
 sorry
-\end{verbatim}
+\end{leanblock}
 No original clean line survives, giving:
 \[
 r_{\text{env}} = 0.0.

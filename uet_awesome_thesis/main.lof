@@ -6,7 +6,9 @@
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {7.1.1}{\ignorespaces Overview of the GammaZero framework. The system maintains a priority queue over scaffolded proof states, asks the LLM for local proof or skeleton actions, checks candidates with Lean, applies AST-guided patching when useful, computes syntactic and dependency-based scores, and updates the AND/OR proof-search graph.}}{37}{figure.caption.7}%
+\contentsline {figure}{\numberline {7.1.2}{\ignorespaces Illustration of GammaZero's hierarchical AND/OR proof search. OR-nodes represent Lean proof states, while AND-nodes represent skeleton actions that decompose a goal into named subgoals. The scaffolded proof context on the right shows how a child state is embedded back into the surrounding Lean proof, preserving sibling goals and local dependencies.}}{38}{figure.caption.8}%
+\contentsline {figure}{\numberline {7.6.1}{\ignorespaces AST-guided Sorrifier patching. Lean diagnostics identify failing regions in the generated proof, the AST server maps those diagnostics to structured syntax nodes, and the Sorrifier replaces only the invalid regions with \texttt {sorry} placeholders. The resulting patched code is used for partial scoring, not as a final proof.}}{42}{figure.caption.9}%
 \addvspace {10\p@ }
 \addvspace {10\p@ }
 \addvspace {10\p@ }

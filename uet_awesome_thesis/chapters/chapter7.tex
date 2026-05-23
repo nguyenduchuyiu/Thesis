@@ -7,11 +7,38 @@ GammaZero is organized around four interacting components:
 \begin{itemize}
     \item \textbf{Model interface:} asks the LLM for local proof actions or skeleton actions under separate output requirements.
     \item \textbf{Lean verification interface:} checks generated candidates, reports diagnostics, returns placeholder states, and rejects candidates that violate the action requirement.
-    \item \textbf{Sorrifier:} repairs invalid candidates with \texttt{sorry} only for partial reward estimation.
-    \item \textbf{Search and reward evaluator:} maintains the AND/OR graph, selects open states using a priority queue, computes rewards, and exports scored trajectories.
+    \item \textbf{Sorrifier:} patches invalid candidates with \texttt{sorry} only for partial score estimation.
+    \item \textbf{Search and reward evaluator:} maintains the AND/OR graph, selects open states using a priority queue, computes scores, and exports scored trajectories.
 \end{itemize}
 
 These components implement the formulation from Section~\ref{sec:problem-formulation}. The model proposes candidate proof code, Lean checks it, the graph records the resulting state changes, and the reward evaluator stores both successful and failed attempts for later analysis.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/GemmaZero_Overview_Image.png}
+\caption{Overview of the GammaZero framework. The system maintains a priority queue over scaffolded proof states, asks the LLM for local proof or skeleton actions, checks candidates with Lean, applies AST-guided patching when useful, computes syntactic and dependency-based scores, and updates the AND/OR proof-search graph.}
+\label{fig:gammazero-overview}
+\end{figure}
+
+Figure~\ref{fig:gammazero-overview} shows how the framework components interact during search. The loop is
+not a pure pass-or-fail sampler: every candidate is materialized inside a scaffold, checked by Lean, and
+then either accepted as a proof step, patched for partial syntactic signal, or retained as a failed attempt
+with diagnostic information. The search evaluator combines these signals with graph structure so that
+the priority queue can focus later model calls on the most promising open proof states.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/scaffold_and_graph.png}
+\caption{Illustration of GammaZero's hierarchical AND/OR proof search. OR-nodes represent Lean proof states, while AND-nodes represent skeleton actions that decompose a goal into named subgoals. The scaffolded proof context on the right shows how a child state is embedded back into the surrounding Lean proof, preserving sibling goals and local dependencies.}
+\label{fig:and-or-scaffold-example}
+\end{figure}
+
+Figure~\ref{fig:and-or-scaffold-example} connects the abstract search graph to the concrete Lean code
+checked during verification. A skeleton action creates an AND-node whose children are OR-nodes
+corresponding to named subgoals. Each child is then solved inside a scaffolded proof context that keeps
+the surrounding proof structure visible, including sibling declarations and unresolved holes. This allows
+GammaZero to solve a local subgoal while preserving enough context to stitch the completed child proof
+back into the root theorem.
 
 \section{Scaffold Rule in the Implementation}
 
@@ -31,10 +58,10 @@ Target labels and target indices make this check stable. A label helps humans re
 \section{Model Interface and Output Parsing}
 
 The model is used as a fixed proposal mechanism. For local proof requests, the prompt asks for Lean proof code that closes the current target and forbids \texttt{sorry} and \texttt{admit}. For skeleton requests, the prompt asks for a proof outline with child subgoals. \texttt{admit} is forbidden, and \texttt{sorry} is allowed only for those child subgoals, for example:
-\begin{verbatim}
+\begin{leanblock}
 have h_step : P := by
   sorry
-\end{verbatim}
+\end{leanblock}
 
 The prompt may include optional natural-language reasoning, but only the Lean code block is passed to Lean. The parser extracts the first valid Lean code block, stops at the configured generation limit, and applies action-specific checks before verification. For subgoal scaffolds, the parser compares the returned full scaffold with the expected scaffold and extracts only the replacement for the target \texttt{sorry}.
 
@@ -67,11 +94,33 @@ proof states.
 
 \section{Lean Verification Interface}
 
-Candidates are executed by persistent Lean workers. The returned result includes diagnostics, warnings, placeholder locations, generated proof states, and enough source-position metadata for repair and subgoal extraction. A local proof action succeeds only if Lean closes the current state with no real \texttt{sorry} or \texttt{admit}. A skeleton is accepted as a candidate when it passes the skeleton format checks and either closes the current target directly or exposes valid child proof states.
+Candidates are executed by persistent Lean workers. The returned result includes diagnostics, warnings, placeholder locations, generated proof states, and enough source-position metadata for patching and subgoal extraction. A local proof action succeeds only if Lean closes the current state with no real \texttt{sorry} or \texttt{admit}. A skeleton is accepted as a candidate when it passes the skeleton format checks and either closes the current target directly or exposes valid child proof states.
 
-Verification is iterative at the action level. For each generated candidate, GammaZero first materializes the candidate inside the current scaffold: a local proof action is inserted as the replacement for the target \texttt{sorry}, while a skeleton is inserted as the parent proof body with child holes temporarily represented by \texttt{sorry}. Lean then checks the resulting scaffold, not only the isolated fragment returned by the model. If the candidate is rejected or can only be used for syntactic reward, the search samples or repairs another candidate and repeats this materialize-and-check loop until it finds an accepted action or reaches the configured action and verification limits.
+Verification is iterative at the action level. For each generated candidate, GammaZero first materializes the candidate inside the current scaffold: a local proof action is inserted as the replacement for the target \texttt{sorry}, while a skeleton is inserted as the parent proof body with child holes temporarily represented by \texttt{sorry}. Lean then checks the resulting scaffold, not only the isolated fragment returned by the model. If the candidate is rejected or can only be used for syntactic scoring, the search samples or patches another candidate and repeats this materialize-and-check loop until it finds an accepted action or reaches the configured action and verification limits.
 
-Failed candidates may be sent to the Sorrifier for syntactic reward estimation. Repair does not turn a failed local proof action into a solved state, and it does not turn a placeholder-containing skeleton into a final proof. System failures, worker crashes, and timeouts are recorded as failed actions with metadata, not repaired as proof fragments.
+Failed candidates may be sent to the Sorrifier for syntactic score estimation. Patching does not turn a failed local proof action into a solved state, and it does not turn a placeholder-containing skeleton into a final proof. System failures, worker crashes, and timeouts are recorded as failed actions with metadata, not patched as proof fragments.
+
+\section{Sorrifier and AST-Guided Patching}
+
+The Sorrifier is used when a candidate contains useful Lean structure but fails local verification. Rather
+than discarding the whole generated block, GammaZero asks Lean for syntax information around the
+diagnostic locations and replaces failing subterms, tactics, or proof blocks with controlled
+\texttt{sorry} placeholders. The patched program is not accepted as a proof. It is used only to measure
+how much of the candidate survives elaboration and to produce a syntactic reward signal for search and
+trajectory export.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/Sorrifier_image.png}
+\caption{AST-guided Sorrifier patching. Lean diagnostics identify failing regions in the generated proof, the AST server maps those diagnostics to structured syntax nodes, and the Sorrifier replaces only the invalid regions with \texttt{sorry} placeholders. The resulting patched code is used for partial scoring, not as a final proof.}
+\label{fig:sorrifier-ast-patching}
+\end{figure}
+
+Figure~\ref{fig:sorrifier-ast-patching} illustrates why patching is structural rather than purely textual.
+The failing declarations are located through Lean's parsed syntax tree, so GammaZero can preserve valid
+surrounding declarations and patch the smallest useful proof regions. This makes the syntactic reward
+less brittle: a long candidate with two invalid proof blocks can still receive credit for the code that
+remains meaningful after those blocks are replaced.
 
 \section{Lean Metaprogramming Servers}
 
@@ -81,7 +130,7 @@ with Lean metaprogramming. These services expose the information needed by searc
 same loaded environment, imports, and worker state across many candidate checks.
 
 The AST server is used for syntax-level operations. Given generated proof code and a diagnostic span, it
-returns the surrounding syntax nodes and source ranges needed by the Sorrifier. This makes repair
+returns the surrounding syntax nodes and source ranges needed by the Sorrifier. This makes patching
 structural: the system can patch a tactic, expression, or proof block instead of guessing from raw text.
 Because the syntax tree is produced by Lean's own parser, the search does not need to repeatedly
 reconstruct approximate parse information outside Lean.
@@ -137,28 +186,76 @@ The priority scores are heuristics for allocating limited search effort. They ar
 The state priority score combines signals that estimate whether expanding a state is likely to finish an active proof:
 \[
 \begin{aligned}
-\mathrm{score}(s) =
-&\; \alpha_{\mathrm{in}} \mathrm{score}_{\mathrm{incoming}}(s)
-+ \alpha_{\mathrm{proof}} r_{\mathrm{proof}}^{\mathrm{best}}(s)
-+ \alpha_{\mathrm{prog}} \mathrm{bonus}_{\mathrm{committed}}(s) \\
-&- \alpha_{\mathrm{depth}} \mathrm{depth}(s)
-- \alpha_{\mathrm{retry}} \mathrm{tacticTries}(s)
-- \alpha_{\mathrm{skel}} \mathrm{skeletonTries}(s)
-- \alpha_{\mathrm{bad}} \mathrm{badSkeletonRounds}(s).
+Q_{\mathrm{state}}(s) =
+&\; w_I I(s)
++ w_R R(s)
++ w_B B(s) \\
+&- w_d d(s)
+- w_T T(s)
+- w_S S(s)
+- w_U U(s).
 \end{aligned}
 \]
-Incoming skeleton score transfers priority from a promising decomposition to its children. The term \(r_{\mathrm{proof}}^{\mathrm{best}}(s)\) is the best syntactic reward obtained by a local proof candidate tried on state \(s\). The committed-skeleton progress bonus favors children of the active skeleton, especially the last open child. Depth and retry penalties reduce priority for states that are deep, repeatedly attempted, or attached to skeletons with little progress.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{@{}p{0.36\textwidth}p{0.58\textwidth}@{}}
+\toprule
+Term & Meaning \\
+\midrule
+\(s\) & Open OR-node, i.e., a proof state waiting for expansion. \\
+\(I(s)\) & Incoming priority inherited from the skeleton that created \(s\). \\
+\(R(s)\) & Best syntactic reward obtained by a local proof candidate tried on \(s\). \\
+\(B(s)\) & Progress bonus for children of the committed skeleton, especially when a child would complete the parent. \\
+\(d(s)\) & Search depth of \(s\). \\
+\(T(s)\) & Number of local proof attempts made directly at \(s\). \\
+\(S(s)\) & Number of skeleton-generation attempts made directly from \(s\); descendant skeletons are not counted. \\
+\(U(s)\) & Number of search rounds where the committed skeleton for \(s\) is stale, low-progress, or keeps child states open despite additional effort. \\
+\(w_\cdot\) & Non-negative heuristic weights controlling queue-order sensitivity. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Incoming skeleton score transfers priority from a promising decomposition to its children. The
+committed-skeleton progress bonus favors children of the active skeleton, especially the last open child.
+Depth and retry penalties reduce priority for states that are deep, repeatedly attempted, or attached to
+skeletons with little progress. In particular, \(U(s)\) penalizes budget spent
+inside an unproductive committed decomposition even when no new skeleton proposal is generated.
 
 Skeletons are scored before commitment or reservation:
 \[
-\mathrm{score}(a_{\mathrm{skel}}) =
-\beta_{\mathrm{env}} r_{env}
-+ \beta_{\mathrm{parent}} \mathrm{score}_{\mathrm{parent}}
-+ g(n_{\mathrm{children}})
-- \beta_{\mathrm{depth}} \mathrm{depth(parent)}
-- \beta_{\mathrm{repair}} \mathds{1}_{\mathrm{repaired}}.
+\begin{aligned}
+Q_{\mathrm{skel}}(a) =
+&\; u_E E(a)
++ u_P P(a)
++ u_C C(a) \\
+&- u_d d(\mathrm{parent}(a))
+- u_\rho \rho(a).
+\end{aligned}
 \]
-This score prefers skeletons that are clean, have high syntactic reward, and are proposed from promising parent states. The term \(g(n_{\mathrm{children}})\) scores the number of child subgoals, penalizing decompositions that create too many branches and giving less value to skeletons that do not expose useful children. A repaired skeleton can still be useful, but a clean skeleton is preferred when other signals are similar.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{@{}p{0.36\textwidth}p{0.58\textwidth}@{}}
+\toprule
+Term & Meaning \\
+\midrule
+\(a\) & Candidate skeleton action proposed for a parent proof state. \\
+\(E(a)\) & Syntactic reward measuring how much of the generated skeleton survives Lean-guided patching. \\
+\(P(a)\) & Priority propagated from the parent OR-node into the candidate skeleton. \\
+\(C(a)\) & Child-count score: rewards useful decomposition but penalizes too many branches. \\
+\(d(\mathrm{parent}(a))\) & Search depth of the parent state that proposed \(a\). \\
+\(\rho(a)\) & Repair indicator, equal to \(1\) if the skeleton required patching and \(0\) otherwise. \\
+\(u_\cdot\) & Non-negative heuristic weights for skeleton ranking. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This score prefers skeletons that are clean, have high syntactic reward, and are proposed from
+promising parent states. A repaired skeleton can still be useful, but a clean skeleton is preferred when
+other signals are similar.
 
 In practice, the score must interact with the search budget. A skeleton that is only slightly worse than
 the best one may still be worth reserving if the parent state is important and the remaining queue is small.

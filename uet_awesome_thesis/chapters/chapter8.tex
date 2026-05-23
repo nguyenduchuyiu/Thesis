@@ -3,30 +3,28 @@
 
 \section{Experimental Scope}
 
-The goal of the experiments is to evaluate GammaZero as an implemented proof-search and data synthesis framework. The primary question is whether the system can run end-to-end: generate candidate actions, verify them with Lean, expand the subgoals introduced by skeleton actions, recover partial signal from invalid generations, and finally produce Lean-verified proofs without placeholders when the search succeeds.
+The goal of the experiments is to evaluate GammaZero as an implemented proof-search and data synthesis framework. The primary question is whether the system can run end-to-end: generate candidate actions, verify them with Lean, expand the subgoals introduced by skeleton actions, patch invalid generations, score partial proof signal, and finally produce Lean-verified proofs without placeholders when the search succeeds.
 
-The main correctness metric is root solved rate without \texttt{sorry} or \texttt{admit}. However, root solved rate alone does not explain how the system behaves. Since GammaZero is designed to produce structured search trajectories for future policy optimization, the experiments also report diagnostic metrics about search effort, recovery, decomposition, and reward computation.
+The main correctness metric is root solved rate without \texttt{sorry} or \texttt{admit}. However, root solved rate alone does not explain how the system behaves. Since GammaZero is designed to produce structured search trajectories for future policy optimization, the experiments also analyze the contribution of hierarchical search and the scoring signals extracted from generated candidates.
 
-The evaluation therefore focuses on four aspects:
+The evaluation therefore focuses on two aspects:
 \begin{itemize}
     \item \textbf{Proof success:} whether the final reconstructed proof is accepted by Lean without placeholders.
-    \item \textbf{Search effort:} how many actions are generated, how many Lean verification calls are used, how deep the solved proof becomes, and how often the queue is pruned.
-    \item \textbf{Repair and reward signals:} how often invalid generations are repaired by the Sorrifier and how much generated code survives recovery.
-    \item \textbf{Decomposition quality:} how often skeletons are inserted, committed, solved, or abandoned, and how dependency analysis classifies their generated proof fragments.
+    \item \textbf{Hierarchy and scoring signals:} how much skeleton expansion contributes beyond direct root solving, and how partial proof signals are scored.
 \end{itemize}
 
-These measurements are intended to describe the behavior of the implemented framework rather than to claim that every design choice is globally optimal. For example, comparing priority-queue search with a simpler expansion schedule can show whether the search order matters in this implementation, but it is not a universal theorem about best-first search. Similarly, dependency-class statistics help diagnose whether skeletons create useful or redundant structure, but they are not a mathematical measure of proof elegance.
+These measurements are intended to describe the behavior of the implemented framework rather than to claim that every design choice is globally optimal. For example, comparing priority-queue search with a simpler expansion schedule can show whether the search order matters in this implementation, but it is not a universal theorem about best-first search.
 
-The resulting search records are treated as scored proof-search trajectories. They are suitable for future policy optimization, but this thesis reports only the search, recovery, final verification, and reward-computation results obtained from the current implementation.
+The resulting search records are treated as scored proof-search trajectories. They are suitable for future policy optimization, but this thesis reports only the proof-success, ablation, scoring, and final-verification results obtained from the current implementation.
 
 \section{Setup}
 
 \paragraph{Lean environment.}
 All experiments are conducted in Lean 4 using version \texttt{v4.29.0-rc1}. The project uses Mathlib \citep{mathlib2020}
 from the \texttt{leanprover-community/mathlib4} repository, pinned to revision:
-\begin{verbatim}
+\begin{leanblock}
 33a7291a345d718bca41f8ae8a9bae365d8f2a3e
-\end{verbatim}
+\end{leanblock}
 The Mathlib input revision is \texttt{v4.29.0-rc1}. This pinned environment ensures that all Lean
 executions, diagnostics, and proof-state reports are evaluated under a fixed library version.
 
@@ -47,8 +45,9 @@ generation limits. Local proof attempts are tried before skeleton requests, and 
 which open state is expanded next. The maximum search depth is set to \(D=10\), and the maximum
 number of graph nodes per theorem is set to \(N=512\).
 
-Lean execution uses \(4\) parallel workers. Each Lean call has a timeout of \(120\) seconds. The
-Sorrifier is allowed up to \(100\) recovery cycles for a failed generation.
+Lean execution uses \(4\) parallel workers. Each Lean call has a timeout of \(120\) seconds, and the
+Lean heartbeat limit is set to \(100000\). The Sorrifier is allowed up to \(50\) patching cycles for a
+failed generation.
 
 \paragraph{Generation configuration.}
 The maximum generation length is set to \(8192\) new tokens. Sampling uses temperature \(1.0\), with
@@ -72,166 +71,263 @@ competition-style mathematics such as algebra, number theory, and inequalities.
 
 \section{Metrics}
 
-We report metrics in four groups: proof success, search cost, repair and reward signals, and decomposition quality.
+We report metrics in two groups: proof success and scoring signals.
 
 \paragraph{Proof success.}
-The main correctness metric is root solved rate without placeholders. A root theorem is counted as solved only when the final reconstructed proof is accepted by Lean and contains no real \texttt{sorry} or \texttt{admit}. This metric is deliberately strict: placeholder-compilable proofs, partially solved skeletons, and repaired scripts do not count as solved roots.
+The main correctness metric is root solved rate without placeholders. A root theorem is counted as solved only when the final reconstructed proof is accepted by Lean and contains no real \texttt{sorry} or \texttt{admit}. This metric is deliberately strict: placeholder-compilable proofs, partially solved skeletons, and patched scripts do not count as solved roots.
 
-We also report direct-root solves as a root-only local proof baseline. This baseline uses the same local
-proof proposal budget and the same Lean feedback retry mechanism at the root, but it does not allow
-skeleton expansion or deeper search. It therefore measures how much of the final solve rate comes from
-root-level local proof generation before hierarchical search adds any value.
+For external context, we compare against the strongest whole-proof prover reported by
+\citet{ospanov2025minif2fLeanRevisited} on miniF2F-v2s. This comparison is not a strict
+same-budget comparison, because their results use a different model, prover architecture, and
+evaluation setup. It is
+included as a real published reference point rather than as an internal ablation.
 
-\paragraph{Search cost.}
-Generated actions count all local proof and skeleton proposals produced by the model interface. Lean verification calls count executions sent to Lean, including calls used during repair and final verification. These two numbers are reported separately because one generated action may trigger several Lean calls if it requires repair, while an action rejected by a format check may trigger no full verification.
-
-We also report average solved depth. A depth of zero means that the theorem was solved directly at the root. A larger depth means that the proof used nested decomposition through skeleton actions.
-
-\paragraph{Repair and reward signals.}
-Repaired candidates measure how often the Sorrifier is used. A high repair rate can have two meanings: the model may be producing many invalid candidates, or the recovery module may be extracting useful signal that would otherwise be discarded. For this reason, repair rate is interpreted together with the syntactic reward \(r_{\mathrm{env}}\) and the dependency reward \(r_{\mathrm{dep}}\).
-
-\paragraph{Decomposition quality.}
-Skeletons added to the search graph count the number of skeleton actions accepted into the graph for possible expansion. We also separate solved theorems into those solved by direct local proof at the root and those solved using skeleton decomposition.
-
-Dependency-class distribution is the main structural metric for skeleton quality. Generated child subgoals are classified as used-and-solved, solved-but-unused, unresolved-unused, or unresolved-used. A useful decomposition should create many used-and-solved subgoals, few solved-but-unused subgoals, and few unresolved-used subgoals on active proof paths.
+\paragraph{Scoring signals.}
+GammaZero records syntactic and dependency-aware scores for generated proof fragments. These signals are used to describe partial progress during search-data generation, but final success is still counted only after Lean accepts the reconstructed proof without placeholders.
 
 \section{Main Results}
 
-Table~\ref{tab:main-results} compares a root-only local proof baseline with GammaZero on the
-evaluated miniF2F-valid and miniF2F-test rollout logs. The baseline is computed from problems solved
-directly at the root by local proof attempts. It uses the same root local proof budget and Lean feedback
-retry loop as the full system, but disables skeleton expansion and deeper graph search.
+Table~\ref{tab:minif2f_results} compares GammaZero with recent tree-search, whole-proof
+generation, and Apollo-augmented provers on miniF2F-test. For GammaZero, the sample budget is
+reported as a cumulative search-node budget rather than as independent proof samples. The token
+budget is the average number of tokens consumed per solved instance under the corresponding
+cumulative budget, with early stopping after successful verification.
+
+\begin{table}[t]
+\centering
+\caption{
+Comparison on miniF2F-test.
+For GammaZero, the sample budget denotes the maximum search node budget.
+The token budget is averaged over solved instances under each cumulative node budget.
+}
+\label{tab:minif2f_results}
+\resizebox{\linewidth}{!}{
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Method} & \textbf{Model size} & \textbf{Sample budget} & \textbf{Token budget} & \textbf{miniF2F-test} \\
+\midrule
+
+\multicolumn{5}{@{}l}{\textit{Tree Search Methods}} \\
+\midrule
+Hypertree Proof Search \citep{lample2022hypertree} & 0.6B & $64 \times 5000$ & -- & 41.0\% \\
+IntLM2.5-SP+BFS+CG \citep{wu2024internlm25stepprover} & 7B & $256 \times 32 \times 600$ & -- & 65.9\% \\
+HPV16+BFS+DC \citep{hunyuanprover2025} & 7B & $600 \times 8 \times 400$ & -- & 68.4\% \\
+BFS-Prover \citep{xin2025bfsprover} & 7B & $2048 \times 2 \times 600$ & -- & 70.8\% \\
+\midrule
+
+\multicolumn{5}{@{}l}{\textit{Whole-proof Generation Methods}} \\
+\midrule
+\makecell[l]{DeepSeek-R1-\\Distill-Qwen-7B \citep{guo2025deepseekr1}} & 7B & 32 & -- & 42.6\% \\
+Leanabell-GD-RL \citep{leanabell2025prover} & 7B & 128 & -- & 61.1\% \\
+STP \citep{yu2025stp} & 7B & 25600 & -- & 67.6\% \\
+\midrule
+
+\multirow{2}{*}{o3-mini \citep{openai2025o3mini}} & \multirow{2}{*}{--} & 1 & -- & 3.3\% \\
+ &  & 32 & -- & 24.6\% \\
+\midrule
+
+o4-mini \citep{openai2025o3o4mini} & -- & 1 & -- & 7.0\% \\
+\midrule
+
+\multirow{3}{*}{Goedel-SFT \citep{lin2025goedelprover}} & \multirow{3}{*}{7B} & 32 & 16.1K & 57.6\% \\
+ &  & 3200 & 1.6M & 62.7\% \\
+ &  & 25600 & 12.7M & 64.7\% \\
+\midrule
+
+\multirow{3}{*}{\makecell[l]{Kimina-Prover-\\Preview-Distill \citep{wang2025kiminaprover}}} & \multirow{3}{*}{7B} & 1 & 4.4K & 52.5\% \\
+ &  & 32 & 140K & 63.1\% \\
+ &  & 1024 & 4.5M & 70.8\% \\
+\midrule
+
+\multicolumn{5}{@{}l}{\textit{Whole-proof Generation Methods + Apollo}} \\
+\midrule
+o3-mini + Apollo \citep{openai2025o3mini,apollo} & -- & 8 & -- & 40.2\% \\
+o4-mini + Apollo \citep{openai2025o3o4mini,apollo} & -- & 15 & -- & 46.7\% \\
+Goedel-SFT + Apollo \citep{lin2025goedelprover,apollo} & 7B & 362 & 179K & 65.6\% \\
+Kimina-Preview + Apollo \citep{wang2025kiminaprover,apollo} & 7B & 307 & 1.3M & 75.0\%\\
+\midrule
+ 
+\multicolumn{5}{@{}l}{\textit{Our Method}} \\
+\midrule
+\multirow{5}{*}{\makecell[l]{GammaZero +\\Gemini 3 Flash Preview}}
+& \multirow{5}{*}{--}
+& 32 nodes
+& 5.1K
+& 59.8\% \\
+
+&
+& 64 nodes
+& 8.4K
+& 66.4\% \\
+
+&
+& 128 nodes
+& 15.4K
+& 73.8\% \\
+
+&
+& 256 nodes
+& 19.8K
+& 75.8\% \\
+
+&
+& 512 nodes
+& 30.2K
+& \textbf{77.5\%} \\
+
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+GammaZero shows a clear budget-performance curve. With only 32 search nodes, it reaches 59.8\% on
+miniF2F-test while using an average of 5.1K tokens per solved instance. Increasing the budget to 64
+and 128 nodes raises the pass rate to 66.4\% and 73.8\%, respectively. The gains become smaller at
+larger budgets: 256 nodes reaches 75.8\%, and 512 nodes reaches 77.5\%. This pattern suggests that
+the hierarchical search finds many accessible proofs early, while the remaining problems require
+substantially more search effort.
+
+The comparison also highlights GammaZero's token efficiency. At 128 nodes, GammaZero obtains
+73.8\% with 15.4K tokens per solved instance, exceeding Kimina-Prover-Preview-Distill at 1024
+samples, which reports 70.8\% with 4.5M tokens. At 512 nodes, GammaZero reaches 77.5\%, improving
+over Kimina-Preview + Apollo at 75.0\% while using 30.2K tokens per solved instance. Overall, the
+main result supports the central claim that scaffold-aware hierarchical search can convert a small
+cumulative node budget into competitive proof coverage.
+
+All 59 solved roots pass final verification after proof stitching, so the reported
+successes are placeholder-free Lean proofs. The search graph may contain patched candidates, temporary
+placeholders, failed branches, and reserved skeletons, but a root is counted as solved only after the
+selected proof path is reconstructed and checked again by Lean.
+
+\section{Ablation Study}
+
+To isolate the effect of hierarchical expansion, we compare GammaZero with a root-only local proof
+variant on the same evaluated test set. This ablation uses the same root local proof budget and the same Lean
+feedback retry mechanism, but disables skeleton expansion and deeper graph search. It is therefore an
+internal ablation, not an external theorem-proving baseline.
+
+The root-only variant starts from the same initial theorem scaffold as GammaZero, with one root
+\texttt{sorry} hole. It repeatedly asks the model for local proof bodies that replace only this root hole,
+materializes each candidate in the theorem, and checks the result with Lean. Failed attempts may still
+feed the same critique-correction prompt window used by the full system, so the comparison does not
+remove compiler feedback. What it removes is hierarchy: the variant never accepts skeleton actions,
+never creates child proof states, and never searches below the root. A theorem is solved by this variant
+only if one of the root-level local proof attempts closes the whole theorem directly without
+\texttt{sorry} or \texttt{admit}.
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{@{}llccc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Split & Method & Solved & Solve Rate & Search Gain \\
+Method & Solved & Solve Rate & Gain \\
 \midrule
-miniF2F-valid & Root-only local proof & 13 / 33 & 39.4\% & -- \\
-miniF2F-valid & \textbf{GammaZero} & \textbf{27 / 33} & \textbf{81.8\%} & \textbf{+42.4\%} \\
-\midrule
-miniF2F-test & Root-only local proof & 21 / 36 & 58.3\% & -- \\
-miniF2F-test & \textbf{GammaZero} & \textbf{28 / 36} & \textbf{77.8\%} & \textbf{+19.4\%} \\
+Root-only local proof & 41 / 87 & 47.13\% & -- \\
+\textbf{GammaZero} & \textbf{59 / 87} & \textbf{67.82\%} & \textbf{+20.69\%} \\
 \bottomrule
 \end{tabular}
-\caption{Comparative evaluation of the root-only local proof baseline against GammaZero. Search gain is the absolute improvement in solve rate from enabling skeleton expansion and deeper graph search.}
-\label{tab:main-results}
+\caption{Root-only ablation. Gain is the absolute improvement from enabling skeleton expansion and deeper graph search under the same test set and search budget.}
+\label{tab:root-only-ablation}
 \end{table}
 
-GammaZero solves 27 out of 33 evaluated validation theorems and 28 out of 36 evaluated test theorems.
-The corresponding root solve rates are 81.8\% and 77.8\%. Compared with direct root sampling, the
-hierarchical search adds 14 solved validation theorems and 7 solved test theorems. The absolute gains are
-42.4 percentage points on validation and 19.4 percentage points on test.
+The ablation shows that root-level local proof attempts solve a substantial fraction of the evaluated
+theorems. However, enabling skeleton expansion adds 18 solved theorems beyond the 41 root-level
+direct solves. This suggests that the hierarchical part of GammaZero is not merely diagnostic
+machinery: it contributes additional solved roots beyond direct completion at the initial proof state.
+
+We further separate the solved theorems according to the depth of the final accepted proof path. A direct root solve has solved depth 0: the theorem is closed at the root node by
+local proof actions without committing to a skeleton decomposition. A hierarchical solve has solved
+depth at least 1: the final proof uses at least one skeleton-created child state in the committed
+AND/OR proof tree.
 
 \begin{table}[h]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule
-Split & Actions & Lean Calls & Repair & Input Tok. & Output Tok. \\
-\midrule
-miniF2F-valid & 124.1 & 229.7 & 77.2\% & 14.0M & 5.7M \\
-miniF2F-test & 106.9 & 198.7 & 80.4\% & 16.1M & 6.2M \\
-\bottomrule
-\end{tabular}
-\caption{Search cost and repair summary. Actions and Lean calls are averages per theorem; token counts are totals for each split.}
-\label{tab:resource-results}
-\end{table}
-
-All 55 solved roots across the two splits pass final verification after proof stitching, so the reported
-successes are placeholder-free Lean proofs. The search graph may contain repaired candidates, temporary
-placeholders, failed branches, and reserved skeletons, but a root is counted as solved only after the
-selected proof path is reconstructed and checked again by Lean.
-
-The average solved depth on the validation logs is 1.44. This indicates that many solved theorems are closed by shallow search, but some require deeper decomposition. A depth greater than zero means that the final proof uses at least one skeleton-created child state. Therefore, the solve rate should be interpreted together with the decomposition metrics below.
-
-\section{Repair and Reward Signals}
-
-Across the 33 validation rollout logs, the Sorrifier repairs 3,161 out of 4,095 generated actions,
-giving a repair rate of 77.19\%. Across the 36 test rollout logs, it repairs 3,092 out of 3,848
-generated actions, giving a repair rate of 80.35\%. These high repair rates show that invalid Lean
-generations are common in this setting. They also show why binary success or failure is not sufficient for
-data generation: many invalid candidates still contain recoverable local structure.
-
-On the validation logs, the average syntactic reward \(r_{\mathrm{env}}\) is 0.6717, while the average
-dependency reward \(r_{\mathrm{dep}}\) is 0.1060. On the test logs, the corresponding values are 0.6781
-and 0.0780. The low average \(r_{\mathrm{dep}}\) should be read carefully. Most generated actions do not
-produce a complete dependency structure: they may fail, be patched with placeholders, or leave the main
-goal unsolved. Such actions naturally receive little or no dependency credit. A smaller number of useful
-actions receive high dependency scores and are the actions that matter for successful stitched proofs.
-
-This is why \(r_{\mathrm{env}}\) and \(r_{\mathrm{dep}}\) are reported together. The syntactic reward measures
-how much generated Lean text survived repair. The dependency reward is sparser: it gives credit only
-when generated declarations are both solved and used by the checked proof. The average gap therefore
-reflects the sparsity of genuinely useful proof structure, not a claim that every repaired fragment is
-semantically valuable.
-
-\section{Decomposition Analysis}
-
-Table~\ref{tab:deep-metrics} reports the main decomposition metrics across both splits. The
-dependency-class rows are included mainly for auditability and reward-data construction. They show how
-the exported trajectory separates child subgoals that are solved and used by the final proof from child
-subgoals that are solved but unused, unfinished and unused, or unfinished but still required by an
-incomplete proof branch.
-
-\begin{table}[h]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
+\small
 \begin{tabular}{@{}lcc@{}}
 \toprule
-Metric & miniF2F-valid & miniF2F-test \\
+Solve category & Solved / Total & Rate \\
 \midrule
-Skeletons added to search graph & 568 / 17.21 avg. & 595 / 16.53 avg. \\
-Direct local proof solves & 13 (48.1\%) & 21 (75.0\%) \\
-Skeleton-decomposition solves & 14 (51.9\%) & 7 (25.0\%) \\
-Used and solved & 142 & 89 \\
-Solved but unused & 9 & 5 \\
-Unresolved and unused & 145 & 118 \\
-Unresolved and used & 28 & 49 \\
+Direct root solves (depth 0) & 41 / 87 & 47.13\% \\
+Hierarchical skeleton solves (depth \(\geq 1\)) & 18 / 87 & 20.69\% \\
+\midrule
+\textbf{Total solved} & \textbf{59 / 87} & \textbf{67.82\%} \\
 \bottomrule
 \end{tabular}
-\caption{Decomposition and dependency-class metrics on the miniF2F-valid and miniF2F-test rollout logs. Skeleton counts are reported as total / average added to the search graph per run.}
-\label{tab:deep-metrics}
+\caption{Depth-based decomposition of solved theorems on the evaluated test set. Direct root solves correspond to flat local proof generation; hierarchical skeleton solves are additional successes whose final proof path uses at least one skeleton decomposition.}
+\label{tab:test-depth-decomposition}
 \end{table}
 
-GammaZero adds 568 skeletons to the search graph across the 33 validation rollout logs and 595 across
-the 36 test rollout logs, with averages of 17.21 and 16.53 skeletons per theorem. This shows that
-decomposition is used frequently during search, rather than appearing only in rare examples.
+This depth split is the most direct internal measurement of the contribution of hierarchy. The 41 direct
+root solves estimate the effective flat tactic baseline for the proposal model under the same root
+generation and verification conditions. The 18 additional hierarchical solves correspond to a 20.69
+percentage-point absolute gain from enabling skeleton decomposition and AND/OR graph search.
 
-Among the 27 solved validation theorems, 13 are solved by direct local proof at the root, while 14 use
-skeleton decomposition. Among the 28 solved test theorems, 21 are solved directly at the root, while 7
-require deeper hierarchical search. This split suggests that both action types are useful. Direct local
-proof handles goals that can be closed in the current scaffold. Skeleton actions are needed for theorems
-that benefit from child subgoals.
+\begin{table}[h]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Theorem & Theorem \\
+\midrule
+\texttt{aime\_1983\_p9} & \texttt{amc12a\_2008\_p15} \\
+\texttt{aime\_1988\_p3} & \texttt{amc12a\_2008\_p8} \\
+\texttt{aime\_1990\_p2} & \texttt{amc12a\_2010\_p11} \\
+\texttt{aime\_1996\_p5} & \texttt{amc12a\_2011\_p18} \\
+\texttt{algebra\_amgm\_faxinrrp2msqrt2geq2mxm1div2x} & \texttt{amc12b\_2004\_p3} \\
+\texttt{algebra\_amgm\_prod1toneq1\_sum1tongeqn} & \texttt{imo\_1961\_p1} \\
+\texttt{amc12\_2000\_p15} & \texttt{imo\_1964\_p1\_1} \\
+\texttt{amc12a\_2003\_p24} & \texttt{imo\_1964\_p1\_2} \\
+ & \texttt{imo\_1965\_p1} \\
+ & \texttt{imo\_1966\_p4} \\
+\bottomrule
+\end{tabular}
+\caption{The 18 test theorems solved by hierarchical skeleton search. These theorems were not closed by direct root solving; their final accepted proofs required skeleton-created child states.}
+\label{tab:hierarchical-test-solves}
+\end{table}
 
-The direct-root count should not be read as a pure flat-sampling number. These attempts still benefit
-from the same Lean feedback and retry loop used by GammaZero. The comparison isolates the contribution
-of hierarchy: the root-only baseline can retry local proof actions at the root, but it cannot introduce
-skeleton-created child states. The hierarchical search solves additional depth-greater-than-zero theorems,
-showing that skeleton expansion and graph search add coverage beyond direct root completion.
+\section{Patching and Scoring Signals}
 
-The point of these dependency classes is not to prove that the search heuristic can predict useful
-subgoals in advance. Their role is narrower: they make the recorded trajectory inspectable after Lean
-verification. A later training or analysis step can distinguish proof structure that contributed to the
-stitched proof from structure that was redundant, abandoned, or still blocked by unresolved children.
+Invalid Lean generations remain common in this setting. This is why binary success or failure is not
+sufficient for data generation: many invalid candidates still contain locally meaningful structure that
+can be patched and scored.
+
+The low average dependency reward \(r_{\mathrm{dep}}\) should be read carefully. Most generated actions
+do not produce a complete dependency structure: they may fail, be patched with placeholders, or leave
+the main goal unsolved. Such actions naturally receive little or no dependency credit. A smaller number
+of useful actions receive high dependency scores and are the actions that matter for successful stitched
+proofs.
+
+This is why \(r_{\mathrm{env}}\) and \(r_{\mathrm{dep}}\) are reported together. The syntactic reward measures
+how much generated Lean text survives patching. The dependency reward is sparser: it gives credit only
+when generated declarations are both solved and used by the checked proof. The average gap therefore
+reflects the sparsity of genuinely useful proof structure, not a claim that every patched fragment is
+semantically valuable.
 
 A detailed trajectory case study for \texttt{aime\_1991\_p9} is included in Appendix~\ref{app:case-study-aime-1991-p9}.
 
 \section{Discussion}
 
-The main result shows that GammaZero can solve a large fraction of the evaluated theorem instances while preserving a strict correctness boundary: final success is counted only after Lean verifies the reconstructed proof without placeholders. The final stitching success count is also important. It indicates that the graph can contain many partial or failed branches while still producing a clean final proof when a complete path is found.
+The main result shows that GammaZero can solve a large fraction of miniF2F-test with a compact
+cumulative search budget. Its pass rate rises from 59.8\% at 32 nodes to 77.5\% at 512 nodes, while
+the average token cost per solved instance remains far below the million-token regimes reported by
+large-scale whole-proof sampling baselines. This supports the view that the graph can contain many
+partial or failed branches while still producing a clean final proof when a complete path is found.
 
-The recovery results show that invalid generations are not rare. Most generated actions require some form of repair, but many still preserve enough local structure to provide reward signal. This supports the design decision to separate proof correctness from reward extraction. A repaired script is not a proof, but it can still help describe how much of the generated Lean code was locally meaningful.
+The patching and scoring results show that invalid generations are not rare. Most generated actions require some form of patching, but many still preserve enough local structure to receive useful scores. This supports the design decision to separate proof correctness from trajectory scoring. A patched script is not a proof, but it can still help describe how much of the generated Lean code was locally meaningful.
 
-The decomposition results show that skeleton actions are used often and that they contribute to solved proofs. The split between direct root solutions and decomposition-based solutions suggests that neither action family is sufficient alone. Local proof actions are useful for shallow goals, while skeleton actions expose proof structure in harder proofs.
+The root-only ablation shows that local proof generation is already strong, but not sufficient for the
+evaluated subset. Enabling skeleton expansion and deeper graph search adds solved theorems beyond
+direct root completion, which supports the central design choice of combining local proof actions with
+hierarchical search.
 
-The gap between \(r_{\mathrm{env}}\) and \(r_{\mathrm{dep}}\) is one of the most important findings. It shows that local recoverability and final proof contribution are different properties. A generated fragment may survive recovery but still not matter to the completed proof. This justifies using expression-tree dependency analysis as a separate structural signal.
+The gap between \(r_{\mathrm{env}}\) and \(r_{\mathrm{dep}}\) is one of the most important findings. It shows that local syntactic survival and final proof contribution are different properties. A generated fragment may survive patching but still not matter to the completed proof. This justifies using expression-tree dependency analysis as a separate structural signal.
 
-At the same time, the results should not be overinterpreted. The evaluation uses a fixed proposal model, a fixed Lean environment, and a finite search budget. Unsolved theorems are not mathematically impossible; they are unsolved under the current configuration. Similarly, unused generated subgoals are unused in the proof path found by the system, not necessarily useless in all possible proofs.
+At the same time, the results should not be overinterpreted. The external comparison uses published
+systems with different models and budgets, while GammaZero is reported under the implementation
+constraints of this thesis. The evaluation also
+uses a fixed proposal model, a fixed Lean environment, and a finite search budget. Unsolved theorems
+are not mathematically impossible; they are unsolved under the current configuration.
 
 
 \section{Reproducibility Considerations}
@@ -253,7 +349,7 @@ LLM sampling introduces a second source of variance. Even with fixed prompts and
 model APIs may not provide perfect determinism. The thesis therefore emphasizes aggregate search
 metadata and trajectory structure in addition to root solve rate. If one run solves a theorem and another
 does not, the difference may come from sampling rather than from the architecture. Recording generated
-actions, priority scores, repair results, and dependency classes makes it possible to inspect why a run
+actions, priority scores, patching results, and final proof paths makes it possible to inspect why a run
 succeeded or failed.
 
 \section{Threats to Validity}
@@ -266,7 +362,7 @@ controlled evaluation setting rather than as a complete measure of theorem-provi
 
 The second threat is model dependence. GammaZero is designed to be model-agnostic, but the quality of
 generated local proof actions and skeleton actions strongly affects the observed search behavior. A stronger model might
-need fewer repairs and produce better skeletons; a weaker model might make the search appear worse
+need fewer patches and produce better skeletons; a weaker model might make the search appear worse
 than the architecture itself. The experiments should therefore report the proposal model clearly and avoid
 claiming that results transfer automatically to all LLMs.
 
@@ -274,10 +370,11 @@ The third threat is heuristic dependence. Priority scores, skeleton commitment t
 skeleton rules are hand-designed in the current implementation. They are intended to be reasonable
 engineering choices, not optimal search theory. The present experiments do not isolate each heuristic
 component, so the exact numbers should be interpreted as evidence about this implementation rather than
-universal constants. Systematic ablations are left for future work.
+universal constants. The root-only ablation isolates the broad contribution of hierarchical expansion,
+but finer-grained ablations of the individual heuristic terms are left for future work.
 
 The fourth threat is reward interpretation. Dense reward can make partial progress visible, but it can
 also overemphasize syntactic survival if not paired with structural checks. GammaZero mitigates this by
-combining line-based recovery reward with dependency analysis and final Lean verification. Nevertheless,
+combining line-based patching scores with dependency analysis and final Lean verification. Nevertheless,
 the reward values should be understood as training signals, not as mathematical measures of elegance or
 insight.

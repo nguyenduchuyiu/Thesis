@@ -15,12 +15,12 @@ The framework in this thesis keeps those cases separate instead of collapsing th
 label.
 
 Lean proof scripts commonly use tactic mode:
-\begin{verbatim}
+\begin{leanblock}
 theorem and_comm (P Q : Prop) :
   And P Q -> And Q P := by
   intro h
   exact And.intro h.right h.left
-\end{verbatim}
+\end{leanblock}
 
 Each tactic transforms a proof state containing local hypotheses and a target goal. If all goals are discharged and the resulting proof term type-checks, Lean accepts the theorem. This kernel-checked execution model is crucial for AI-assisted proving: models may hallucinate, but Lean remains the verifier of final correctness.
 

@@ -41,12 +41,12 @@ This design reduces the number of search decisions inside one proof state. In a 
 A skeleton action is a generated Lean proof body that introduces proof structure with possible child subgoals. It may use constructs such as \texttt{have}, \texttt{suffices}, \texttt{cases}, or \texttt{induction}. Unlike a local proof action, a skeleton action is allowed to create child subgoals.
 
 A skeleton action does not merely list subgoals. It also describes how the resulting proof pieces are intended to support the current goal. For example:
-\begin{verbatim}
+\begin{leantitledblock}{Skeleton Example}
 intro hp
 have hq : Q := by
   sorry
 exact h2 hq
-\end{verbatim}
+\end{leantitledblock}
 The statement \(Q\) becomes a child subgoal, while the last line shows how the completed proof of \(Q\) will be used to continue the parent proof.
 
 A skeleton action may create zero or more child subgoals. If it creates no child subgoal and the current state is solved, it is simply a successful action. If it creates child subgoals, then all of them must eventually be solved for the skeleton to succeed. In the search graph, the child subgoals become child proof states.

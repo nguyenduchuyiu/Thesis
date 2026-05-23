@@ -5,6 +5,54 @@
 \usepackage{enumitem}
 \usepackage{microtype}
 \usepackage{dsfont}
+\usepackage{tcolorbox}
+\usepackage{makecell}
+\usepackage{multirow}
+\tcbuselibrary{breakable, listings}
+
+\newtcblisting{leanblock}{
+  listing only,
+  breakable,
+  colback=gray!5,
+  colframe=gray!40,
+  sharp corners,
+  boxrule=0.5pt,
+  left=6pt,
+  right=6pt,
+  top=5pt,
+  bottom=5pt,
+  listing options={
+    basicstyle=\ttfamily\small,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    showstringspaces=false
+  }
+}
+
+\newtcblisting{leantitledblock}[1]{
+  listing only,
+  breakable,
+  colback=gray!5,
+  colframe=gray!40,
+  colbacktitle=gray!20,
+  coltitle=black,
+  fonttitle=\bfseries,
+  title={#1},
+  sharp corners,
+  boxrule=0.5pt,
+  left=6pt,
+  right=6pt,
+  top=5pt,
+  bottom=5pt,
+  listing options={
+    basicstyle=\ttfamily\small,
+    columns=fullflexible,
+    keepspaces=true,
+    breaklines=true,
+    showstringspaces=false
+  }
+}
 
 \title{Asymmetric Hierarchical Search with Dense Reward Optimization for Neural Theorem Proving}
 \author{Nguyen Duc Huy}
