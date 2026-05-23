@@ -219,8 +219,8 @@ counted as solved only when the reconstructed proof is accepted without \texttt{
 \toprule
 Method & Solved & Solve Rate & Gain \\
 \midrule
-Root-only local proof (32 nodes) & -- & 59.8\% & -- \\
-\textbf{GammaZero (512 nodes)} & -- & \textbf{77.5\%} & \textbf{+17.7\%} \\
+Root-only local proof (32 nodes) & 146/244 & 59.8\% & -- \\
+\textbf{GammaZero (512 nodes)} & 189/244 & \textbf{77.5\%} & \textbf{+17.7\%} \\
 \bottomrule
 \end{tabular}
 \caption{Root-only ablation. Gain is the absolute improvement from increasing the cumulative node budget from the root-only 32-node setting to the full 512-node hierarchical search setting.}
@@ -232,57 +232,6 @@ theorems: the 32-node setting reaches 59.8\%. Increasing the budget to 512 nodes
 to 77.5\%, an absolute gain of 17.7 percentage points. This suggests that the hierarchical part of
 GammaZero is not merely diagnostic machinery: it contributes additional solved roots beyond direct
 completion at the initial proof state.
-
-We further separate the solved theorems according to the depth of the final accepted proof path. A direct root solve has solved depth 0: the theorem is closed at the root node by
-local proof actions without committing to a skeleton decomposition. A hierarchical solve has solved
-depth at least 1: the final proof uses at least one skeleton-created child state in the committed
-AND/OR proof tree.
-
-\begin{table}[h]
-\centering
-\small
-\begin{tabular}{@{}lcc@{}}
-\toprule
-Solve category & Budget & Rate \\
-\midrule
-Root-level local proof solves & 32 nodes & 59.8\% \\
-Additional hierarchical search gain & 512 nodes & +17.7\% \\
-\midrule
-\textbf{Total solved} & \textbf{512 nodes} & \textbf{77.5\%} \\
-\bottomrule
-\end{tabular}
-\caption{Budget-based decomposition of solved theorems on the evaluated test set. The 32-node setting corresponds to root-level local proof search; the additional gain is obtained by allowing deeper hierarchical search up to 512 nodes.}
-\label{tab:test-depth-decomposition}
-\end{table}
-
-This budget split is the most direct internal measurement of the contribution of hierarchy. The
-32-node result estimates the effective root-level baseline for the proposal model under the same
-generation and verification conditions. The 17.7 percentage-point improvement at 512 nodes measures
-the added coverage from enabling deeper skeleton decomposition and AND/OR graph search.
-
-\begin{table}[h]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}ll@{}}
-\toprule
-Theorem & Theorem \\
-\midrule
-\texttt{aime\_1983\_p9} & \texttt{amc12a\_2008\_p15} \\
-\texttt{aime\_1988\_p3} & \texttt{amc12a\_2008\_p8} \\
-\texttt{aime\_1990\_p2} & \texttt{amc12a\_2010\_p11} \\
-\texttt{aime\_1996\_p5} & \texttt{amc12a\_2011\_p18} \\
-\texttt{algebra\_amgm\_faxinrrp2msqrt2geq2mxm1div2x} & \texttt{amc12b\_2004\_p3} \\
-\texttt{algebra\_amgm\_prod1toneq1\_sum1tongeqn} & \texttt{imo\_1961\_p1} \\
-\texttt{amc12\_2000\_p15} & \texttt{imo\_1964\_p1\_1} \\
-\texttt{amc12a\_2003\_p24} & \texttt{imo\_1964\_p1\_2} \\
- & \texttt{imo\_1965\_p1} \\
- & \texttt{imo\_1966\_p4} \\
-\bottomrule
-\end{tabular}
-\caption{The 18 test theorems solved by hierarchical skeleton search. These theorems were not closed by direct root solving; their final accepted proofs required skeleton-created child states.}
-\label{tab:hierarchical-test-solves}
-\end{table}
 
 \section{Patching and Scoring Signals}
 

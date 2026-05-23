@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.5.6)  23 MAY 2026 22:18
+This is XeTeX, Version 3.141592653-2.6-0.999995 (TeX Live 2023/Debian) (preloaded format=xelatex 2025.5.6)  23 MAY 2026 22:25
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1959,16 +1959,6 @@ Underfull \hbox (badness 10000) in paragraph at lines 11--11
  \TU/lmr/m/n/13 Ro  
  []
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 12--12
- \TU/lmr/m/n/13 De  
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 13--13
- \TU/lmr/m/n/13 Th  
- []
-
 )
 \tf@lot=\write8
 \openout8 = `main.lot'.
@@ -2106,50 +2096,20 @@ xceeding Kimina-
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[54]
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-LaTeX Font Info:    Calculating math sizes for size <8.66673> on input line 267
-.
-
-LaTeX Font Warning: Font shape `OT1/cmr/m/n' in size <4.33336> not available
-(Font)              size <5> substituted on input line 267.
-
-
-LaTeX Font Warning: Font shape `OML/cmm/m/it' in size <4.33336> not available
-(Font)              size <5> substituted on input line 267.
-
-
-LaTeX Font Warning: Font shape `OMS/cmsy/m/n' in size <4.33336> not available
-(Font)              size <5> substituted on input line 267.
-
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/8.66673'
-
-(microtype)             (new value: 8.66673pt) on input line 267.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/6.06668'
-
-(microtype)             (new value: 6.06668pt) on input line 267.
-Package microtype Info: Fixing zero \fontdimen 6 for font `U/dsrom/m/n/4.33336'
-
-(microtype)             (new value: 4.33336pt) on input line 267.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-[55] [56] [57]) (./chapters/chapter9.tex [58] [59] [60]
+[54] [55] [56]) (./chapters/chapter9.tex [57] [58] [59]
 Chapter 9.
-[61
+[60
 
 
-] [62]) [63] (./main.bbl [64
+] [61]) [62] (./main.bbl [63
 
 
 
-] [65]) [66] (./chapters/appendixA.tex [67
+] [64]) [65] (./chapters/appendixA.tex [66
 
 
 ]
-[68]
+[67]
 
 Package fontspec Info: Font family 'DejaVuSansMono(0)' created for font
 (fontspec)             'DejaVu Sans Mono' with options [].
@@ -2174,7 +2134,7 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `DejaVuSansMono' (encoding: TU).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [69] [70] [71]) (./chapters/appendixB.tex [72]
+ [68] [69] [70]) (./chapters/appendixB.tex [71]
 Appendix A.
 \openout9 = `main.listing'.
 
@@ -2191,7 +2151,7 @@ Appendix A.
 \openout9 = `main.listing'.
 
 
-(./main.listing) [73
+(./main.listing) [72
 
 
 ]
@@ -2207,7 +2167,7 @@ Appendix A.
 \openout9 = `main.listing'.
 
 
-(./main.listing) [74]) (./chapters/appendixC.tex [75]
+(./main.listing) [73]) (./chapters/appendixC.tex [74]
 Appendix B.
 \openout9 = `main.listing'.
 
@@ -2220,7 +2180,7 @@ Appendix B.
  (./main.listing)
 \openout9 = `main.listing'.
 
- (./main.listing) [76
+ (./main.listing) [75
 
 
 ]
@@ -2236,13 +2196,13 @@ Appendix B.
  (./main.listing)
 \openout9 = `main.listing'.
 
- (./main.listing) [77])
+ (./main.listing) [76])
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
 (/usr/share/texlive/texmf-dist/tex/generic/stringenc/se-utf32be.def
 File: se-utf32be.def 2019/11/29 v1.12 stringenc: UTF-32BE
-) [78]
+) [77]
 (./main.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
@@ -2253,11 +2213,8 @@ L3 programming layer <2024-01-22>
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 29C4CB6286A4EF15758E384A1A6FADD0;13313.
+(rerunfilecheck)             Checksum: 3DE16B2EAC9DA70C383300D5608DC384;13313.
  )
 (\end occurred inside a group at level 2)
 
@@ -2265,12 +2222,12 @@ Package rerunfilecheck Info: File `main.out' has not changed.
 ### semi simple group (level 1) entered at line 20 (\begingroup)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 42211 strings out of 474878
- 837407 string characters out of 5762517
+ 42166 strings out of 474878
+ 836357 string characters out of 5762517
  2501627 words of memory out of 5000000
- 63348 multiletter control sequences out of 15000+600000
- 571811 words of font info for 135 fonts, out of 8000000 for 9000
+ 63303 multiletter control sequences out of 15000+600000
+ 569599 words of font info for 123 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  123i,41n,131p,2355b,33446s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on main.xdv (89 pages, 1607184 bytes).
+Output written on main.xdv (88 pages, 1583884 bytes).
