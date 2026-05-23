@@ -1,0 +1,30 @@
+\abstractpage{
+Formal theorem proving in Lean 4 remains difficult because proof search receives sparse binary feedback
+and must explore a large combinatorial space of tactics, intermediate lemmas, and decomposition choices.
+This thesis presents \textbf{GammaZero}, a hierarchical theorem-proving framework that combines local
+proof generation with structured skeleton decomposition inside an asymmetric AND/OR search graph.
+GammaZero uses scaffold-aware subgoal solving: a child goal is solved inside the Lean proof context in
+which it was created, rather than as an independent theorem. The system also records partially useful
+failed generations through AST-guided Sorrifier patching and dependency-aware reward computation over
+Lean expression trees, allowing proof search to produce structured trajectories rather than only binary
+success or failure labels.
+
+Experiments are conducted in Lean 4 with Mathlib pinned to a fixed revision and use
+\texttt{Gemini 3 Flash Preview} as the proposal model. On miniF2F-test, GammaZero solves 189 out of
+244 theorems at a 512-node cumulative search budget, achieving a placeholder-free pass rate of
+\textbf{77.5\%}. The pass rate rises consistently with budget: 59.8\% at 32 nodes, 66.4\% at 64 nodes,
+73.8\% at 128 nodes, and 75.8\% at 256 nodes. The 512-node setting uses an average of 30.2K generated
+tokens per solved instance under early stopping, and the 128-node setting already reaches 73.8\% with
+15.4K tokens per solved instance.
+
+Against recent published miniF2F-test systems reported under Lean 4.17, GammaZero exceeds
+Kimina-Prover-Preview-Distill at 1024 samples (70.8\%) and Kimina-Preview + Apollo (75.0\%) while
+using a compact cumulative node budget. On Lean 4.29 reruns over the same 244-problem test split,
+direct Kimina sampling reaches 53.28\%, Apollo + Kimina reaches 53.69\%, direct Gemini 3 Flash
+Preview solves 113/244 theorems (46.3\%), and GammaZero reaches 77.5\%. An internal ablation treats the 32-node result
+as the root-only setting: increasing the search
+budget to the full 512-node hierarchical setting improves performance from 146/244 solved theorems
+(59.8\%) to 189/244 (77.5\%), an absolute gain of 17.7 percentage points. These results support the
+central claim that scaffold-aware hierarchical search can turn local proof generation into substantially
+higher Lean-verified solve rates while producing scored search data suitable for future policy optimization.
+}

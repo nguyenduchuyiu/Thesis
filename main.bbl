@@ -1,0 +1,202 @@
+\begin{thebibliography}{27}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Azerbayev et~al.(2023)Azerbayev, Piotrowski, Schoelkopf, Ayers, Radev,
+  and Avigad]{azerbayev2023proofnet}
+Zhangir Azerbayev, Bartosz Piotrowski, Hailey Schoelkopf, Edward~W. Ayers,
+  Dragomir Radev, and Jeremy Avigad.
+\newblock {ProofNet}: Autoformalizing and formally proving undergraduate-level
+  mathematics, 2023.
+
+\bibitem[Bansal et~al.(2019)Bansal, Loos, Rabe, Szegedy, and
+  Wilcox]{bansal2019holist}
+Kshitij Bansal, Sarah~M. Loos, Markus~N. Rabe, Christian Szegedy, and Stewart
+  Wilcox.
+\newblock {HOList}: An environment for machine learning of higher order logic
+  theorem proving.
+\newblock In \emph{Proceedings of the 36th International Conference on Machine
+  Learning}, volume~97 of \emph{Proceedings of Machine Learning Research},
+  pages 454--463. PMLR, 2019.
+\newblock URL \url{https://arxiv.org/abs/1904.03241}.
+
+\bibitem[Chen et~al.(2025)Chen, Gu, Huang, Huang, Jiang, Jie, Jin, Jin, Li, Ma,
+  Ren, Shen, Shi, Sun, Sun, Wang, Wang, Wang, Wei, Wei, Wu, Wu, Xia, Xin, Yang,
+  Ying, Yuan, Yuan, Zhan, Zhang, Zhang, Zhang, Zhao, Zhao, Zhou, and
+  Zhu]{seedProver}
+Luoxin Chen, Jinming Gu, Liankai Huang, Wenhao Huang, Zhicheng Jiang, Allan
+  Jie, Xiaoran Jin, Xing Jin, Chenggang Li, Kaijing Ma, Cheng Ren, Jiawei Shen,
+  Wenlei Shi, Tong Sun, He~Sun, Jiahui Wang, Siran Wang, Zhihong Wang, Chenrui
+  Wei, Shufa Wei, Yonghui Wu, Yuchen Wu, Yihang Xia, Huajian Xin, Fan Yang,
+  Huaiyuan Ying, Hongyi Yuan, Zheng Yuan, Tianyang Zhan, Chi Zhang, Yue Zhang,
+  Ge~Zhang, Tianyun Zhao, Jianqiu Zhao, Yichi Zhou, and Thomas~Hanwen Zhu.
+\newblock {Seed-Prover}: Deep and broad reasoning for automated theorem
+  proving, 2025.
+
+\bibitem[de~Moura and Ullrich(2021)]{demoura2021lean4}
+Leonardo de~Moura and Sebastian Ullrich.
+\newblock The {Lean} 4 theorem prover and programming language.
+\newblock In Andr{\'e} Platzer and Geoff Sutcliffe, editors, \emph{Automated
+  Deduction -- {CADE} 28}, pages 625--635, Cham, 2021. Springer International
+  Publishing.
+\newblock \doi{10.1007/978-3-030-79876-5_37}.
+
+\bibitem[{DeepSeek-AI}(2025)]{guo2025deepseekr1}
+{DeepSeek-AI}.
+\newblock {DeepSeek-R1}: Incentivizing reasoning capability in {LLM}s via
+  reinforcement learning, 2025.
+
+\bibitem[Dong and Ma(2025)]{yu2025stp}
+Kefan Dong and Tengyu Ma.
+\newblock {STP}: Self-play llm theorem provers with iterative conjecturing and
+  proving, 2025.
+
+\bibitem[Dong et~al.(2024)Dong, Mahankali, and Ma]{ProD}
+Kefan Dong, Arvind Mahankali, and Tengyu Ma.
+\newblock Formal theorem proving by rewarding {LLM}s to decompose proofs
+  hierarchically, 2024.
+
+\bibitem[Jiang et~al.(2022{\natexlab{a}})Jiang, Li, Tworkowski, Czechowski,
+  Odrzyg{\'o}{\'z}d{\'z}, Mi{\l}o{\'s}, Wu, and Jamnik]{jiang2022thor}
+Albert~Q. Jiang, Wenda Li, Szymon Tworkowski, Konrad Czechowski, Tomasz
+  Odrzyg{\'o}{\'z}d{\'z}, Piotr Mi{\l}o{\'s}, Yuhuai Wu, and Mateja Jamnik.
+\newblock {Thor}: Wielding hammers to integrate language models and automated
+  theorem provers, 2022{\natexlab{a}}.
+
+\bibitem[Jiang et~al.(2022{\natexlab{b}})Jiang, Welleck, Zhou, Li, Liu, Jamnik,
+  Lacroix, Wu, and Lample]{jiang2022draft}
+Albert~Q. Jiang, Sean Welleck, Jin~Peng Zhou, Wenda Li, Jiacheng Liu, Mateja
+  Jamnik, Timoth{\'e}e Lacroix, Yuhuai Wu, and Guillaume Lample.
+\newblock Draft, sketch, and prove: Guiding formal theorem provers with
+  informal proofs, 2022{\natexlab{b}}.
+
+\bibitem[Kaliszyk et~al.(2018)Kaliszyk, Urban, Michalewski, and
+  Ols{\'a}k]{kaliszyk2018reinforcement}
+Cezary Kaliszyk, Josef Urban, Henryk Michalewski, and Mirek Ols{\'a}k.
+\newblock Reinforcement learning of theorem proving, 2018.
+
+\bibitem[Lample et~al.(2022)Lample, Lachaux, Lavril, Martinet, Hayat, Ebner,
+  Rodriguez, and Lacroix]{lample2022hypertree}
+Guillaume Lample, Marie-Anne Lachaux, Thibaut Lavril, Xavier Martinet, Amaury
+  Hayat, Gabriel Ebner, Aur{\'e}lien Rodriguez, and Timoth{\'e}e Lacroix.
+\newblock {HyperTree} proof search for neural theorem proving, 2022.
+
+\bibitem[Li et~al.(2024)Li, Du, Song, Li, Wang, Yang, and
+  Mi]{hunyuanprover2025}
+Yang Li, Dong Du, Linfeng Song, Chen Li, Weikang Wang, Tao Yang, and Haitao Mi.
+\newblock {HunyuanProver}: A scalable data synthesis framework and guided tree
+  search for automated theorem proving, 2024.
+
+\bibitem[Lin et~al.(2025)Lin, Tang, Lyu, Wu, Lin, Yang, Li, Xia, Chen, Arora,
+  and Jin]{lin2025goedelprover}
+Yong Lin, Shange Tang, Bohan Lyu, Jiayun Wu, Hongzhou Lin, Kaiyu Yang, Jia Li,
+  Mengzhou Xia, Danqi Chen, Sanjeev Arora, and Chi Jin.
+\newblock {Goedel-Prover}: A frontier model for open-source automated theorem
+  proving, 2025.
+
+\bibitem[{OpenAI}(2025{\natexlab{a}})]{openai2025o3mini}
+{OpenAI}.
+\newblock Openai o3-mini.
+\newblock \url{https://openai.com/index/openai-o3-mini/}, 2025{\natexlab{a}}.
+\newblock Accessed 2026-05-23.
+
+\bibitem[{OpenAI}(2025{\natexlab{b}})]{openai2025o3o4mini}
+{OpenAI}.
+\newblock Introducing openai o3 and o4-mini.
+\newblock \url{https://openai.com/index/introducing-o3-and-o4-mini/},
+  2025{\natexlab{b}}.
+\newblock Accessed 2026-05-23.
+
+\bibitem[Ospanov et~al.(2025{\natexlab{a}})Ospanov, Farnia, and
+  Yousefzadeh]{apollo}
+Azim Ospanov, Farzan Farnia, and Roozbeh Yousefzadeh.
+\newblock {APOLLO}: Automated {LLM} and {Lean} collaboration for advanced
+  formal reasoning, 2025{\natexlab{a}}.
+
+\bibitem[Ospanov et~al.(2025{\natexlab{b}})Ospanov, Farnia, and
+  Yousefzadeh]{ospanov2025minif2fLeanRevisited}
+Azim Ospanov, Farzan Farnia, and Roozbeh Yousefzadeh.
+\newblock {miniF2F-Lean} revisited: Reviewing limitations and charting a path
+  forward, 2025{\natexlab{b}}.
+
+\bibitem[Polu and Sutskever(2020)]{polu2020gptf}
+Stanislas Polu and Ilya Sutskever.
+\newblock Generative language modeling for automated theorem proving, 2020.
+
+\bibitem[{The mathlib Community}(2020)]{mathlib2020}
+{The mathlib Community}.
+\newblock The {Lean} mathematical library.
+\newblock In \emph{Proceedings of the 9th {ACM} {SIGPLAN} International
+  Conference on Certified Programs and Proofs}, {CPP} 2020, pages 367--381, New
+  York, NY, USA, 2020. Association for Computing Machinery.
+\newblock \doi{10.1145/3372885.3373824}.
+
+\bibitem[Wang et~al.(2025)Wang, Unsal, Lin, Baksys, Liu, Santos, Sung, Vinyes,
+  Ying, Zhu, Lu, de~Saxc{\'e}, Bailey, Song, Xiao, Zhang, Zhang, Pu, Zhu, Liu,
+  Bayer, Michel, Yu, Dreyfus-Schmidt, Tunstall, Pagani, Machado, Bourigault,
+  Wang, Polu, Barroyer, Li, Niu, Fleureau, Hu, Yu, Wang, Yang, Liu, and
+  Li]{wang2025kiminaprover}
+Haiming Wang, Mert Unsal, Xiaohan Lin, Mantas Baksys, Junqi Liu, Marco~Dos
+  Santos, Flood Sung, Marina Vinyes, Zhenzhe Ying, Zekai Zhu, Jianqiao Lu,
+  Hugues de~Saxc{\'e}, Bolton Bailey, Chendong Song, Chenjun Xiao, Dehao Zhang,
+  Ebony Zhang, Frederick Pu, Han Zhu, Jiawei Liu, Jonas Bayer, Julien Michel,
+  Longhui Yu, L{\'e}o Dreyfus-Schmidt, Lewis Tunstall, Luigi Pagani, Moreira
+  Machado, Pauline Bourigault, Ran Wang, Stanislas Polu, Thibaut Barroyer,
+  Wen-Ding Li, Yazhe Niu, Yann Fleureau, Yangyang Hu, Zhouliang Yu, Zihan Wang,
+  Zhilin Yang, Zhengying Liu, and Jia Li.
+\newblock {Kimina-Prover Preview}: Towards large formal reasoning models with
+  reinforcement learning, 2025.
+
+\bibitem[Wu et~al.(2022)Wu, Jiang, Li, Rabe, Staats, Jamnik, and
+  Szegedy]{wu2022autoformalization}
+Yuhuai Wu, Albert~Q. Jiang, Wenda Li, Markus~N. Rabe, Charles Staats, Mateja
+  Jamnik, and Christian Szegedy.
+\newblock Autoformalization with large language models, 2022.
+
+\bibitem[Wu et~al.(2024)Wu, Huang, Zhou, Ying, Yuan, Zhang, Lin, and
+  Chen]{wu2024internlm25stepprover}
+Zijian Wu, Suozhi Huang, Zhejian Zhou, Huaiyuan Ying, Zheng Yuan, Wenwei Zhang,
+  Dahua Lin, and Kai Chen.
+\newblock {InternLM2.5-StepProver}: Advancing automated theorem proving via
+  critic-guided search, 2024.
+
+\bibitem[Xin et~al.(2024)Xin, Ren, Song, Shao, Zhao, Wang, Liu, Zhang, Lu, Du,
+  Gao, Zhu, Yang, Gou, Wu, Luo, and Ruan]{xin2024deepseekproverv15}
+Huajian Xin, Z.~Z. Ren, Junxiao Song, Zhihong Shao, Wanjia Zhao, Haocheng Wang,
+  Bo~Liu, Liyue Zhang, Xuan Lu, Qiushi Du, Wenjun Gao, Qihao Zhu, Dejian Yang,
+  Zhibin Gou, Z.~F. Wu, Fuli Luo, and Chong Ruan.
+\newblock {DeepSeek-Prover-V1.5}: Harnessing proof assistant feedback for
+  reinforcement learning and monte-carlo tree search, 2024.
+
+\bibitem[Xin et~al.(2025)Xin, Xi, Yang, Chen, Wu, Xiao, Sun, Zheng, and
+  Shen]{xin2025bfsprover}
+Ran Xin, Chenguang Xi, Jie Yang, Feng Chen, Hang Wu, Xia Xiao, Yifan Sun, Shen
+  Zheng, and Kai Shen.
+\newblock {BFS-Prover}: Scalable best-first tree search for llm-based automatic
+  theorem proving, 2025.
+
+\bibitem[Yang et~al.(2023)Yang, Swope, Gu, Chalamala, Song, Yu, Godil, Prenger,
+  and Anandkumar]{yang2023leandojo}
+Kaiyu Yang, Aidan~M. Swope, Alex Gu, Rahul Chalamala, Peiyang Song, Shixing Yu,
+  Saad Godil, Ryan Prenger, and Anima Anandkumar.
+\newblock {LeanDojo}: Theorem proving with retrieval-augmented language models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2023.
+\newblock URL \url{https://arxiv.org/abs/2306.15626}.
+
+\bibitem[Zhang et~al.(2025)Zhang, Wang, Ji, Liu, Yue, Zhang, Zhang, Zhou, and
+  Gai]{leanabell2025prover}
+Jingyuan Zhang, Qi~Wang, Xingguang Ji, Yahui Liu, Yang Yue, Fuzheng Zhang,
+  Di~Zhang, Guorui Zhou, and Kun Gai.
+\newblock {Leanabell-Prover}: Posttraining scaling in formal reasoning, 2025.
+
+\bibitem[Zheng et~al.(2022)Zheng, Han, and Polu]{zheng2021minif2f}
+Kunhao Zheng, Jesse~Michael Han, and Stanislas Polu.
+\newblock {miniF2F}: A cross-system benchmark for formal olympiad-level
+  mathematics.
+\newblock In \emph{International Conference on Learning Representations}, 2022.
+\newblock URL \url{https://openreview.net/forum?id=9ZPegFuFTFv}.
+
+\end{thebibliography}

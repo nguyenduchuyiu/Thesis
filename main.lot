@@ -1,0 +1,14 @@
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {8.5.1}{\ignorespaces Comparison on miniF2F-test. Results for prior methods are adapted from Apollo~\citep {apollo} and the corresponding original papers unless otherwise specified. We re-evaluate Kimina-Prover-Preview-Distill-7B and Apollo+Kimina-Prover-Preview-Distill-7B under Lean 4.29, and include a direct Gemini 3 Flash Preview baseline. GammaZero results are from our own evaluation. For GammaZero, the sample budget denotes the maximum number of search-graph nodes expanded by the adaptive proof search, rather than the number of independent whole-proof samples. }}{59}{table.caption.10}%
+\contentsline {table}{\numberline {8.6.1}{\ignorespaces Root-only ablation. Gain is the absolute improvement from increasing the cumulative node budget from the root-only 32-node setting to the full 512-node hierarchical search setting.}}{60}{table.caption.11}%
+\addvspace {10\p@ }
+\addvspace {10\p@ }
+\addvspace {10\p@ }
